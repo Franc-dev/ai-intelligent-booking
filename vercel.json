@@ -1,14 +1,5 @@
 {
   "buildCommand": "pnpm prisma generate && pnpm build",
   "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "env": {
-    "PRISMA_CLI_BINARY_TARGETS": "native",
-    "PRISMA_VERSION": "5.7.1"
-  }
+  "framework": "nextjs"
 }
