@@ -126,16 +126,16 @@ export function PreferencesForm() {
               Preferred Counselor
             </Label>
             <Select
-              value={preferences.preferredCounselorId || ""}
+              value={preferences.preferredCounselorId || "none"}
               onValueChange={(value) =>
-                setPreferences((prev) => ({ ...prev, preferredCounselorId: value || null }))
+                setPreferences((prev) => ({ ...prev, preferredCounselorId: value === "none" ? null : value }))
               }
             >
               <SelectTrigger className="border-2 border-black shadow-sm font-sans">
                 <SelectValue placeholder="Select a preferred counselor (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No preference</SelectItem>
+                <SelectItem value="none">No preference</SelectItem>
                 {counselors.map((counselor) => (
                   <SelectItem key={counselor.id} value={counselor.id}>
                     {counselor.name} - {counselor.specialties.join(", ")}

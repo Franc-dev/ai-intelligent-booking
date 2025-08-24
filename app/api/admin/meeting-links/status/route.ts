@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
       return new Response("Unauthorized", { status: 401 })
     }
 
-    // TODO: Add admin role check
-    // if (!user.isAdmin) {
-    //   return new Response("Forbidden", { status: 403 })
-    // }
+    // Check if user is an admin
+    if (user.role !== "ADMIN") {
+      return new Response("Forbidden", { status: 403 })
+    }
 
     // Get meeting links status
     const meetingLinksStatus = await MeetingLinkManager.getAllMeetingLinksStatus()

@@ -21,7 +21,7 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
       ? `New Session Booked - ${clientName} on ${scheduledAt.toLocaleDateString()}`
       : `Session Confirmed - ${counselorName} on ${scheduledAt.toLocaleDateString()}`
 
-    const htmlContent = isCounselor ? `
+    const htmlContent = isCounselor ?`
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">New Session Booked</h2>
         <p>Hello ${userName},</p>

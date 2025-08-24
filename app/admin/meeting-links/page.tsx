@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { Navigation } from "@/components/navigation"
 import { MeetingLinksDashboard } from "@/components/admin/meeting-links-dashboard"
 
 export default async function MeetingLinksAdminPage() {
@@ -9,13 +10,15 @@ export default async function MeetingLinksAdminPage() {
     redirect("/login")
   }
 
-  // TODO: Add admin role check
-  // if (!user.isAdmin) {
-  //   redirect("/dashboard")
-  // }
+  // Check if user is an admin
+  if (user.role !== "ADMIN") {
+    redirect("/dashboard")
+  }
 
   return (
     <div className="min-h-screen bg-background">
+      <Navigation userRole={user.role} userName={user.name} />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="font-sans font-bold text-3xl mb-2">Meeting Links Management</h1>

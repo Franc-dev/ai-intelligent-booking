@@ -6,11 +6,14 @@ import { format } from "date-fns"
 
 // Static meeting room links (you can replace these with your actual meeting links)
 const MEETING_ROOMS = [
-  { id: "Room-1", link: "https://meet.google.com/abc-defg-hij" },
-  { id: "Room-2", link: "https://meet.google.com/xyz-uvwx-yz" },
-  { id: "Room-3", link: "https://meet.google.com/123-4567-89" },
-  { id: "Room-4", link: "https://meet.google.com/qwe-rtyu-iop" },
-  { id: "Room-5", link: "https://meet.google.com/asd-fghj-klz" },
+  { id: "Room-1", link: "https://meet.google.com/edk-quho-xck" },
+  { id: "Room-2", link: "https://meet.google.com/ycw-qhgp-aiy" },
+  { id: "Room-3", link: "https://meet.google.com/mpu-fcgb-uah" },
+  { id: "Room-4", link: "https://meet.google.com/hez-xesx-khq" },
+  { id: "Room-5", link: "https://meet.google.com/obk-uwdr-mqt" },
+  { id: "Room-6", link: "https://meet.google.com/sqe-ikdj-shj" },
+  { id: "Room-7", link: "https://meet.google.com/pmf-aurw-zcf" },
+  { id: "Room-8", link: "https://meet.google.com/sum-caqe-bct" },
 ]
 
 export async function assignMeetingRoom(): Promise<{ id: string; link: string }> {

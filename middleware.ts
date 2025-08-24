@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Protected routes
-  const protectedRoutes = ["/dashboard", "/booking"]
+  const protectedRoutes = ["/dashboard", "/booking", "/counselor", "/admin", "/profile"]
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
 
   if (isProtectedRoute) {
@@ -15,9 +15,39 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url))
     }
 
-    const userId = await verifyJWT(token)
-    if (!userId) {
+    const jwtData = await verifyJWT(token)
+    if (!jwtData) {
       return NextResponse.redirect(new URL("/login", request.url))
+    }
+
+    // Role-based access control
+    const { role } = jwtData
+    
+    // Prevent admins and counselors from accessing user dashboard
+    if (pathname === "/dashboard" && (role === "ADMIN" || role === "COUNSELOR")) {
+      if (role === "ADMIN") {
+        return NextResponse.redirect(new URL("/admin/users", request.url))
+      } else if (role === "COUNSELOR") {
+        return NextResponse.redirect(new URL("/counselor", request.url))
+      }
+    }
+
+    // Prevent non-admins from accessing admin routes
+    if (pathname.startsWith("/admin") && role !== "ADMIN") {
+      if (role === "COUNSELOR") {
+        return NextResponse.redirect(new URL("/counselor", request.url))
+      } else {
+        return NextResponse.redirect(new URL("/dashboard", request.url))
+      }
+    }
+
+    // Prevent non-counselors from accessing counselor routes
+    if (pathname.startsWith("/counselor") && role !== "COUNSELOR") {
+      if (role === "ADMIN") {
+        return NextResponse.redirect(new URL("/admin/users", request.url))
+      } else {
+        return NextResponse.redirect(new URL("/dashboard", request.url))
+      }
     }
   }
 
@@ -25,8 +55,9 @@ export async function middleware(request: NextRequest) {
   if (pathname === "/login") {
     const token = request.cookies.get("auth-token")?.value
     if (token) {
-      const userId = await verifyJWT(token)
-      if (userId) {
+      const jwtData = await verifyJWT(token)
+      if (jwtData) {
+        // Redirect to dashboard - role-based redirect will be handled by the verify route
         return NextResponse.redirect(new URL("/dashboard", request.url))
       }
     }

@@ -49,8 +49,8 @@ export async function verifyLoginToken(token: string) {
   return loginToken.user
 }
 
-export async function createJWT(userId: string) {
-  const jwt = await new SignJWT({ userId })
+export async function createJWT(userId: string, role?: string) {
+  const jwt = await new SignJWT({ userId, role })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
@@ -62,7 +62,10 @@ export async function createJWT(userId: string) {
 export async function verifyJWT(token: string) {
   try {
     const { payload } = await jwtVerify(token, secret)
-    return payload.userId as string
+    return {
+      userId: payload.userId as string,
+      role: payload.role as string
+    }
   } catch {
     return null
   }
@@ -74,11 +77,11 @@ export async function getCurrentUser() {
 
   if (!token) return null
 
-  const userId = await verifyJWT(token)
-  if (!userId) return null
+  const jwtData = await verifyJWT(token)
+  if (!jwtData) return null
 
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: jwtData.userId },
     include: { preferences: true },
   })
 

@@ -5,12 +5,20 @@ import { ProfileForm } from "@/components/profile/profile-form"
 import { PreferencesForm } from "@/components/profile/preferences-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { User, Settings } from "lucide-react"
+import { Navigation } from "@/components/navigation"
 
 export default async function ProfilePage() {
   const user = await getCurrentUser()
 
   if (!user) {
     redirect("/login")
+  }
+
+  // Role-based access control
+  if (user.role === "ADMIN") {
+    redirect("/admin/users")
+  } else if (user.role === "COUNSELOR") {
+    redirect("/counselor")
   }
 
   // Fetch user preferences and counselors
@@ -40,6 +48,8 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navigation userRole={user.role} userName={user.name} />
+      
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
