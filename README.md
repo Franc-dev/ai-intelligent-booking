@@ -27,7 +27,7 @@ A comprehensive, intelligent mental health booking system built with Next.js 15,
    ```
 
 2. **Install dependencies**
-   ```bash
+```bash
 pnpm install
 ```
 
