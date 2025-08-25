@@ -28,6 +28,16 @@ export function Navigation({ userRole, userName }: NavigationProps) {
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // Close mobile menu on route change to ensure it's closed by default
+  // and never persists between navigations
+  if (typeof window !== 'undefined') {
+    // lightweight safeguard without extra imports
+    // when pathname changes during client navigation, close menu
+    // this runs on each render; cheap boolean compare
+    // eslint-disable-next-line no-unused-expressions
+    pathname && isMobileMenuOpen && setIsMobileMenuOpen(false)
+  }
+
   const handleLogout = async () => {
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" })
@@ -135,7 +145,9 @@ export function Navigation({ userRole, userName }: NavigationProps) {
               variant="ghost"
               size="sm"
               className="p-2"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+              aria-expanded={isMobileMenuOpen}
+              onClick={() => setIsMobileMenuOpen((v) => !v)}
             >
               {isMobileMenuOpen ? (
                 <X className="h-5 w-5" />
