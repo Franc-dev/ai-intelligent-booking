@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth-utils"
 import { MeetingLinkManager } from "@/lib/meeting-links"
 import { prisma } from "@/lib/prisma"
 

@@ -38,7 +38,7 @@ export async function assignMeetingRoom(): Promise<{ id: string; link: string }>
     })
 
     // Find an available room
-    const usedLinks = activeBookings.map(booking => booking.meetingLink)
+    const usedLinks = activeBookings.map((booking: { meetingLink: string | null }) => booking.meetingLink)
     const availableRoom = MEETING_ROOMS.find(room => !usedLinks.includes(room.link))
 
     if (availableRoom) {
@@ -121,7 +121,7 @@ export async function getAvailableTimeSlots(counselorId: string, date: Date): Pr
       const slotTime = new Date(date)
       slotTime.setHours(hour, 0, 0, 0)
       
-      const isBooked = bookedTimes.some(booking => 
+      const isBooked = bookedTimes.some((booking: { scheduledAt: Date }) => 
         Math.abs(booking.scheduledAt.getTime() - slotTime.getTime()) < 60 * 60 * 1000
       )
       

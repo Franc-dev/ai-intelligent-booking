@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Navigation } from "@/components/navigation"
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
       
       <DashboardHeader user={user} />
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Stats Overview */}
         <UserStats
           totalBookings={totalBookings}
@@ -93,14 +93,14 @@ export default async function DashboardPage() {
         <QuickActions />
 
         {/* Main Content Grid */}
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
           {/* Upcoming Bookings */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
             <UpcomingBookings bookings={upcomingBookings} />
           </div>
 
           {/* Booking History */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
             <BookingHistory bookings={pastBookings} />
           </div>
         </div>

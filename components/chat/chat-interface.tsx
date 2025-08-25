@@ -4,10 +4,10 @@ import { useRef, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
-import { Send, Bot, User, Loader2, Calendar, Clock } from "lucide-react"
+import { Send, Bot, User, Loader2, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SuggestedPrompts } from "./suggested-prompts"
-import { BookingConfirmation } from "@/components/booking/booking-confirmation"
+import { BookingForm } from "@/components/booking/booking-form"
 import { Loader } from "@/components/ui/loader"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -16,18 +16,19 @@ interface Message {
   id: string
   role: 'user' | 'assistant' | 'agent'
   content: string
-  toolInvocations?: any[]
   isAgentic?: boolean
+  needsBookingForm?: boolean
+  type?: string
 }
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [showBookingForm, setShowBookingForm] = useState(false)
+  const [currentMessage, setCurrentMessage] = useState<Message | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [bookingConfirmation, setBookingConfirmation] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -46,100 +47,20 @@ export function ChatInterface() {
     }
   }, [input])
 
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1]
-    if (lastMessage?.role === "assistant" && lastMessage.toolInvocations) {
-      const bookingTool = lastMessage.toolInvocations.find(
-        (tool: any) => tool.toolName === "createBooking" && tool.result,
-      )
-      if (bookingTool?.result) {
-        setBookingConfirmation(bookingTool.result)
-      }
-    }
-  }, [messages])
-
   const handlePromptClick = (prompt: string) => {
     setInput(prompt)
   }
 
-  const renderApprovalButton = (content: string) => {
-    // Check if this message contains a booking approval button
-    const buttonMatch = content.match(/<!--BOOKING_APPROVAL_BUTTON:(.*?)-->/)
-    if (!buttonMatch) return null
-    
-    try {
-      const bookingDetails = JSON.parse(buttonMatch[1])
-      
-      return (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h4 className="font-semibold text-green-800 mb-2">Ready to Book?</h4>
-              <p className="text-sm text-green-700">
-                Click the button below to confirm and create your session immediately.
-              </p>
-            </div>
-            <Button
-              onClick={() => handleBookingApproval(bookingDetails)}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm"
-            >
-              ✅ Approve & Book
-            </Button>
-          </div>
-        </div>
-      )
-    } catch (error) {
-      console.error('Failed to parse booking details:', error)
-      return null
-    }
-  }
-
-  const handleBookingApproval = async (bookingDetails: any) => {
-    try {
-      setIsLoading(true)
-      
-      // Send approval message to the AI
-      const approvalMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: 'Yes, book it'
-      }
-      
-      setMessages(prev => [...prev, approvalMessage])
-      
-      // Call the chat API to execute the booking
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Yes, book it',
-          bookingDetails: bookingDetails
-        }),
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Add the AI response
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: data.response
-        }
-        
-        setMessages(prev => [...prev, aiMessage])
-      } else {
-        throw new Error('Failed to approve booking')
-      }
-    } catch (error) {
-      console.error('Booking approval failed:', error)
-      setError('Failed to approve booking. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // Quick replies derived from last assistant message (simple heuristic)
+  const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant')
+  const quickReplies = lastAssistant?.content
+    ? [
+        'Tell me more tips',
+        'How do I start?',
+        'Can we break this into steps?',
+        'Book a session'
+      ]
+    : ['I feel burnt out', 'I need coping tips', 'Find a counselor']
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -148,98 +69,51 @@ export function ChatInterface() {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input
+      content: input.trim()
     }
 
     setMessages(prev => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
 
-    // Only show agentic messages for complex requests or actual booking attempts
-    const lowerInput = input.toLowerCase()
-    const isSimpleGreeting = lowerInput === 'hi' || lowerInput === 'hello' || lowerInput === 'hey' || lowerInput.length < 10
-    const isBookingRequest = lowerInput.includes('book') || lowerInput.includes('schedule') || lowerInput.includes('appointment') || 
-                            (lowerInput.includes('tomorrow') && lowerInput.includes('counselor')) || 
-                            (lowerInput.includes('next week') && lowerInput.includes('counselor')) || 
-                            (lowerInput.includes('morning') && lowerInput.includes('counselor')) || 
-                            (lowerInput.includes('afternoon') && lowerInput.includes('counselor')) || 
-                            (lowerInput.includes('evening') && lowerInput.includes('counselor'))
-
-    // Only show a single elegant thinking message for complex requests
-    if (!isSimpleGreeting && (isBookingRequest || lowerInput.length > 30)) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          id: 'thinking', 
-          role: 'agent' as const, 
-          content: '🤖 **AI Agent is processing your request...**', 
-          isAgentic: true 
-        }])
-      }, 300) // Single message with short delay
-    }
-
-    if (isBookingRequest) {
-      // Add a single, focused booking message
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          id: 'booking', 
-          role: 'agent' as const, 
-          content: '🎯 **Processing your booking request...**', 
-          isAgentic: true 
-        }])
-      }, 800) // Shorter delay, single message
-    }
-
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ 
+          message: userMessage.content,
+          conversationHistory: messages,
+          context: { showBookingForm: false }
+        })
       })
 
       if (response.ok) {
         const data = await response.json()
         
-        // Remove thinking messages
-        setMessages(prev => prev.filter(msg => !msg.isAgentic))
-        
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
+        const aiMessage: Message = {
+          id: Date.now().toString(),
           role: 'assistant',
-          content: data.content || "I'm here to help you schedule a session!",
-          toolInvocations: data.toolInvocations
+          content: data.message,
+          needsBookingForm: data.needsBookingForm,
+          type: data.type
         }
-        setMessages(prev => [...prev, assistantMessage])
+        
+        setMessages(prev => [...prev, aiMessage])
+        
+        // Check if we need to show booking form
+        if (data.needsBookingForm) {
+          setCurrentMessage(aiMessage)
+          setShowBookingForm(true)
+        }
       } else {
-        // Remove thinking messages
-        setMessages(prev => prev.filter(msg => !msg.isAgentic))
-        
-        // Handle error responses
-        let errorMessage = "Failed to get response"
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorData.content || errorMessage
-        } catch {
-          // If error response is not JSON, use status text
-          errorMessage = response.statusText || errorMessage
-        }
-        
-        const errorResponseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`
-        }
-        setMessages(prev => [...prev, errorResponseMessage])
+        throw new Error('Failed to get response')
       }
     } catch (error) {
-      console.error("Chat error:", error)
-      
-      // Remove thinking messages
-      setMessages(prev => prev.filter(msg => !msg.isAgentic))
-      
+      console.error('Chat failed:', error)
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: Date.now().toString(),
         role: 'assistant',
-        content: "I'm sorry, I'm experiencing technical difficulties right now. Please try again in a moment."
+        content: 'I apologize, but I encountered an error. Please try again.'
       }
       setMessages(prev => [...prev, errorMessage])
     } finally {
@@ -251,213 +125,162 @@ export function ChatInterface() {
     setInput(e.target.value)
   }
 
-  // If there's an error with the AI chat, show a fallback
-  if (error) {
+  const handleBookingComplete = (bookingData: any) => {
+    // Add booking confirmation message
+    const confirmationMessage: Message = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: `🎉 **Booking Confirmed!**
+
+**Session Details:**
+- **Counselor:** ${bookingData.counselorName}
+- **Date:** ${new Date(bookingData.scheduledAt).toLocaleDateString()}
+- **Time:** ${new Date(bookingData.scheduledAt).toLocaleTimeString()}
+- **Duration:** ${bookingData.duration} minutes
+- **Meeting Link:** ${bookingData.meetingLink ? 'Will be sent via email' : 'To be provided'}
+
+Your session has been successfully booked! You'll receive a confirmation email with all the details. If you need to make any changes, please contact us at least 24 hours before your session.`
+    }
+    
+    setMessages(prev => [...prev, confirmationMessage])
+    setShowBookingForm(false)
+    setCurrentMessage(null)
+  }
+
+  const handleBookingCancel = () => {
+    setShowBookingForm(false)
+    setCurrentMessage(null)
+  }
+
+  const renderMessage = (message: Message) => {
+    const isUser = message.role === 'user'
+    
     return (
-      <div className="flex flex-col h-full max-w-4xl mx-auto">
-        <div className="border-b-2 border-black p-4 bg-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary text-primary-foreground flex items-center justify-center border-2 border-black">
-              <Bot className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <h2 className="font-sans font-bold text-lg">AI Booking Agent</h2>
-              <p className="text-sm text-muted-foreground font-sans">Schedule meetings with expert counselors</p>
-            </div>
+      <div
+        key={message.id}
+        className={cn(
+          "flex gap-3 p-4",
+          isUser ? "justify-end" : "justify-start"
+        )}
+      >
+        {!isUser && (
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+            <Bot className="w-5 h-5 text-white" />
           </div>
+        )}
+        
+        <div
+          className={cn(
+            "max-w-[80%] rounded-lg px-4 py-2",
+            isUser
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-gray-900"
+          )}
+        >
+          <div className="prose prose-sm max-w-none [--tw-prose-bullets:theme(colors.gray.600)]">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                // Custom styling for markdown elements
+                h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-base font-semibold mb-2">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-sm font-semibold mb-1">{children}</h3>,
+                p: ({ children }) => <p className="mb-2 leading-relaxed last:mb-0">{children}</p>,
+                ul: ({ children }) => <ul className="list-disc ml-5 mb-2 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal ml-5 mb-2 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="text-sm">{children}</li>,
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+                code: ({ children }) => <code className="bg-gray-200 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                pre: ({ children }) => <pre className="bg-gray-200 p-2 rounded text-xs font-mono overflow-x-auto">{children}</pre>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
+          
+          {/* Show booking form trigger if needed */}
+          {message.needsBookingForm && !showBookingForm && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 mb-2">
+                Would you like to book a session now?
+              </p>
+              <Button
+                onClick={() => {
+                  setCurrentMessage(message)
+                  setShowBookingForm(true)
+                }}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                📅 Book Session
+              </Button>
+            </div>
+          )}
         </div>
         
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-4">
-                      <div className="w-12 h-12 bg-red-100 mx-auto mb-3 flex items-center justify-center border-2 border-red-200 rounded-lg">
-            <Bot className="w-6 h-6 text-red-600" />
+        {isUser && (
+          <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 text-white" />
           </div>
-          <h3 className="font-sans font-bold text-lg text-red-800">AI Service Temporarily Unavailable</h3>
-          <p className="text-muted-foreground font-sans max-w-md mx-auto text-sm">
-            We're experiencing technical difficulties with our AI assistant. Please try again later or contact support.
-          </p>
-            <Button 
-              onClick={() => setError(null)} 
-              className="border-2 border-black shadow-sm font-sans"
-            >
-              Try Again
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto" suppressHydrationWarning>
-      {/* Chat Header */}
-      <div className="border-b border-gray-200 p-4 bg-white" suppressHydrationWarning>
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 text-white flex items-center justify-center rounded-full shadow-sm">
-            <Bot className="w-5 h-5" />
+    <div className="flex flex-col h-full max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+            <Bot className="w-6 h-6 text-white" />
           </div>
-          <div className="flex-1">
-            <h2 className="font-sans font-bold text-xl text-gray-900">AI Booking Agent</h2>
-            <p className="text-sm text-gray-600 font-sans">Schedule meetings with expert counselors</p>
-          </div>
-          
-          {/* Meeting System Status */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-full">
-            <Calendar className="w-4 h-4 text-green-600" />
-            <span className="font-sans font-medium text-green-700 text-sm">Meetings Active</span>
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900">AI Mental Health Assistant</h1>
+            <p className="text-sm text-gray-600">I'm here to help with booking sessions and mental health support</p>
           </div>
         </div>
       </div>
 
-      {/* Messages Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="text-center py-6 space-y-4">
-            <div className="w-12 h-12 bg-secondary mx-auto mb-3 flex items-center justify-center border-2 border-black">
-              <Bot className="w-6 h-6" />
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-blue-100 mx-auto mb-4 flex items-center justify-center">
+              <Bot className="w-8 h-8 text-blue-600" />
             </div>
-            <div>
-              <h3 className="font-sans font-bold text-lg mb-1">Welcome to AI Booking</h3>
-              <p className="text-muted-foreground font-sans max-w-md mx-auto text-sm">
-                I'm here to help you schedule a meeting with one of our expert counselors. Tell me what kind of support
-                you're looking for!
-              </p>
-            </div>
-            
-            {/* Meeting System Info */}
-            <div className="max-w-md mx-auto p-3 bg-green-50 border-2 border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Calendar className="w-4 h-4 text-green-600" />
-                <span className="font-sans font-medium text-green-800 text-sm">Meeting System Ready</span>
-              </div>
-              <p className="text-xs text-green-700 font-sans">
-                Our AI can automatically assign meeting rooms and send you confirmation emails with all the details you need.
-              </p>
-            </div>
-            
-            <div className="max-w-2xl mx-auto">
-              <SuggestedPrompts onPromptClick={handlePromptClick} />
-            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome! 👋</h3>
+            <p className="text-gray-600 mb-6">
+              I'm your AI mental health assistant. I can help you book counseling sessions, 
+              provide mental health information, and offer support. How can I help you today?
+            </p>
+            <SuggestedPrompts onPromptClick={handlePromptClick} />
           </div>
         )}
 
-        {messages.map((message) => (
-          <div key={message.id} className={cn(
-            "flex w-full",
-            message.role === "user" ? "justify-end" : "justify-start"
-          )}>
-            <div className={cn(
-              "flex gap-3 max-w-4xl w-full",
-              message.role === "user" ? "flex-row-reverse" : "flex-row"
-            )}>
-              {/* Avatar */}
-              <div className={cn(
-                "w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0 mt-1",
-                message.role === "user" 
-                  ? "bg-blue-500 text-white" 
-                  : message.role === "agent"
-                  ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-                  : "bg-gray-600 text-white"
-              )}>
-                {message.role === "user" ? (
-                  <User className="w-4 h-4" />
-                ) : message.role === "agent" ? (
-                  <div className="relative">
-                    <div className="w-3 h-3 bg-white rounded-full animate-ping" />
-                    <div className="absolute inset-0 w-3 h-3 bg-white rounded-full animate-pulse" />
-                  </div>
-                ) : (
-                  <Bot className="w-4 h-4" />
-                )}
-              </div>
+        {messages.map(renderMessage)}
 
-              {/* Message Container */}
-              <div className={cn(
-                "flex-1 max-w-3xl",
-                message.role === "user" ? "text-right" : "text-left"
-              )}>
-                <div className={cn(
-                  "inline-block rounded-2xl px-4 py-3 shadow-sm",
-                  message.role === "user" 
-                    ? "bg-blue-500 text-white" 
-                    : message.role === "agent"
-                    ? "bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200"
-                    : "bg-gray-100 border border-gray-200"
-                )}>
-                  {message.role === "agent" ? (
-                    <div className="flex items-center gap-2 text-purple-700 font-medium">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-                      <span className="animate-pulse">{message.content}</span>
-                    </div>
-                  ) : (
-                    <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown 
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          h1: ({children}) => <h1 className="text-lg font-bold mb-2 text-current">{children}</h1>,
-                          h2: ({children}) => <h2 className="text-base font-semibold mb-2 text-current">{children}</h2>,
-                          h3: ({children}) => <h3 className="text-sm font-semibold mb-1 text-current">{children}</h3>,
-                          p: ({children}) => <p className="mb-2 text-current last:mb-0">{children}</p>,
-                          ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                          ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                          li: ({children}) => <li className="text-current">{children}</li>,
-                          strong: ({children}) => <strong className="font-semibold text-current">{children}</strong>,
-                          em: ({children}) => <em className="italic text-current">{children}</em>,
-                          code: ({children}) => <code className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
-                          pre: ({children}) => <pre className="bg-gray-200 p-2 rounded text-sm font-mono overflow-x-auto">{children}</pre>,
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
-                      
-                      {/* Render approval button if present */}
-                      {renderApprovalButton(message.content)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {bookingConfirmation && (
-          <div className="flex justify-center my-6">
-            <BookingConfirmation booking={bookingConfirmation} />
+        {/* Inline quick-reply row */}
+        {messages.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4">
+            {quickReplies.map((q) => (
+              <Button key={q} type="button" variant="outline" size="sm" onClick={() => setInput(q)}>
+                {q}
+              </Button>
+            ))}
           </div>
         )}
 
         {isLoading && (
-          <div className="flex w-full justify-start">
-            <div className="flex gap-3 max-w-4xl w-full">
-              {/* Avatar */}
-              <div className="w-8 h-8 bg-gray-600 text-white flex items-center justify-center rounded-full flex-shrink-0 mt-1">
-                <Bot className="w-4 h-4" />
-              </div>
-
-              {/* Loading Message */}
-              <div className="flex-1 max-w-3xl">
-                <div className="inline-block rounded-2xl px-4 py-3 bg-gray-100 border border-gray-200 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <svg className="animate-spin h-5 w-5 text-blue-600" viewBox="0 0 24 24">
-                      <circle cx="4" cy="12" r="2" fill="currentColor"/>
-                      <circle cx="12" cy="4" r="2" fill="currentColor"/>
-                      <circle cx="20" cy="12" r="2" fill="currentColor"/>
-                      <circle cx="12" cy="20" r="2" fill="currentColor"/>
-                    </svg>
-                    <div className="space-y-1">
-                      <div className="font-sans text-sm font-medium text-gray-800">
-                        {input.toLowerCase().includes("book") || input.toLowerCase().includes("schedule") || input.toLowerCase().includes("meeting") 
-                          ? "Creating your meeting..." 
-                          : "Thinking..."}
-                      </div>
-                      {input.toLowerCase().includes("book") || input.toLowerCase().includes("schedule") || input.toLowerCase().includes("meeting") && (
-                        <div className="text-xs text-gray-600 font-sans">
-                          Assigning meeting room • Sending confirmation email • Notifying counselor
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+          <div className="flex gap-3 p-4">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <div className="bg-gray-100 rounded-lg px-4 py-2">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-gray-600">Thinking...</span>
               </div>
             </div>
           </div>
@@ -466,58 +289,60 @@ export function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Fixed Input Form at Bottom */}
-      <div className="border-t border-gray-200 p-4 bg-white flex-shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-2 items-end">
-          <Textarea
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Type your message here... (Shift+Enter for new line, Enter to send)"
-            className="flex-1 border border-gray-300 shadow-sm font-sans resize-none min-h-[44px] max-h-[120px] overflow-y-auto leading-relaxed focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 rounded-xl"
-            style={{ 
-              height: 'auto',
-              minHeight: '44px',
-              maxHeight: '120px'
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (input.trim() && !isLoading) {
-                  handleSubmit(e as any);
+      {/* Booking Form Overlay */}
+      {showBookingForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <BookingForm
+              onBook={handleBookingComplete}
+              onCancel={handleBookingCancel}
+              currentMessage={currentMessage}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Input Form */}
+      <div className="bg-white border-t border-gray-200 p-3">
+        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+          {/* Input container with embedded controls */}
+          <div className="flex items-center gap-2 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-2 py-1 focus-within:bg-white focus-within:border-gray-300 transition-colors">
+            <Textarea
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Type your message..."
+              className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 px-1 py-2"
+              rows={1}
+              disabled={isLoading}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  // submit the surrounding form
+                  ;(e.currentTarget.form as HTMLFormElement | null)?.requestSubmit()
                 }
-              }
-            }}
-            disabled={isLoading}
-            rows={1}
-          />
-          <Button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm font-sans font-semibold px-6 h-[44px] flex-shrink-0 rounded-xl transition-colors duration-200"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
-                  <circle cx="4" cy="12" r="2" fill="currentColor"/>
-                  <circle cx="12" cy="4" r="2" fill="currentColor"/>
-                  <circle cx="20" cy="12" r="2" fill="currentColor"/>
-                  <circle cx="12" cy="20" r="2" fill="currentColor"/>
-                </svg>
-                <span>
-                  {input.toLowerCase().includes("book") || input.toLowerCase().includes("schedule") || input.toLowerCase().includes("meeting")
-                    ? "Creating Meeting..."
-                    : "Thinking..."}
-                </span>
-              </div>
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
+              }}
+            />
+
+            {/* Auto Think toggle (visual only) */}
+            <Button type="button" variant="ghost" className="h-9 gap-1 text-gray-600" title="Auto Think">
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Auto Think</span>
+            </Button>
+
+            {/* Send */}
+            <Button 
+              type="submit" 
+              disabled={isLoading || !input.trim()}
+              className="h-9 w-9 p-0"
+              aria-label="Send"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </form>
       </div>
     </div>

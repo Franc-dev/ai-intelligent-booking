@@ -17,14 +17,14 @@ const SUGGESTED_PROMPTS = [
 
 export function SuggestedPrompts({ onPromptClick }: SuggestedPromptsProps) {
   return (
-    <div className="space-y-3">
-      <h3 className="font-sans font-semibold text-sm text-muted-foreground">Common requests:</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+    <div className="space-y-2 sm:space-y-3">
+      <h3 className="font-sans font-semibold text-xs sm:text-sm text-muted-foreground">Common requests:</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {SUGGESTED_PROMPTS.map((prompt, index) => (
           <Button
             key={index}
             variant="outline"
-            className="text-left justify-start h-auto p-3 border-2 border-black shadow-sm font-sans text-sm bg-transparent"
+            className="text-left justify-start h-auto p-2 sm:p-3 border-2 border-black shadow-sm font-sans text-xs sm:text-sm bg-transparent"
             onClick={() => onPromptClick(prompt)}
           >
             {prompt}

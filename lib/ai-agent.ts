@@ -1,4 +1,3 @@
-import { openrouter, bookingModel } from "./openrouter"
 import { prisma } from "./prisma"
 import { MeetingLinkManager } from "./meeting-links"
 import { sendBookingConfirmationEmail } from "./email"

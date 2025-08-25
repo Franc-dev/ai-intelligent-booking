@@ -1,27 +1,29 @@
-import { getCurrentUser } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { AIAgent } from "@/lib/ai-agent"
+import { NextRequest, NextResponse } from 'next/server'
+import { BookingAgent } from '@/lib/agent'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { prisma } from '@/lib/prisma'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { message, bookingDetails } = await req.json()
+    const { message, conversationHistory, context } = await req.json()
+    
+    // Get authenticated user
     const user = await getCurrentUser()
-
     if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { 
-        status: 401,
-        headers: { "Content-Type": "application/json" }
-      })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    if (!message || typeof message !== 'string') {
-      return new Response(JSON.stringify({ error: "Invalid message format" }), { 
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      })
+    if (!message?.trim()) {
+      return NextResponse.json(
+        { error: 'Message is required' },
+        { status: 400 }
+      )
     }
 
-    // Get user preferences
+    // Get user preferences and context
     const userPreferences = await prisma.userPreferences.findUnique({
       where: { userId: user.id },
       include: {
@@ -35,7 +37,7 @@ export async function POST(req: Request) {
       },
     })
 
-    // Get all available counselors
+    // Get available counselors
     const availableCounselors = await prisma.counselor.findMany({
       where: { isActive: true },
       select: {
@@ -44,35 +46,30 @@ export async function POST(req: Request) {
         specialties: true,
         bio: true,
       },
-    }).then(counselors => counselors.map(c => ({
-      ...c,
-      bio: c.bio || "Professional counselor with expertise in their field."
-    })))
-
-    // Get conversation history
-    const conversationHistory = await prisma.aIConversation.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      select: {
-        messages: true,
-      },
     })
 
-    // Flatten conversation history and ensure proper typing
-    const flatHistory = conversationHistory
-      .flatMap(conv => conv.messages)
-      .filter((msg): msg is { role: string; content: string } => 
+    // Get conversation history from database
+    const dbConversationHistory = await prisma.aIConversation.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      select: { messages: true },
+      take: 10
+    })
+
+    // Flatten conversation history
+    const flatHistory = dbConversationHistory
+      .flatMap((conv: any) => conv.messages)
+      .filter((msg: any): msg is { role: string; content: string } => 
         typeof msg === 'object' && msg !== null && 'role' in msg && 'content' in msg
       )
       .reverse()
-      .slice(-20) // Last 20 messages for context
+      .slice(-20)
 
-    // Create AI Agent context with guaranteed user ID
-    const aiContext = {
+    // Create enhanced context
+    const enhancedContext = {
       userPreferences: userPreferences ? {
         ...userPreferences,
-        userId: user.id // Ensure user ID is always present
+        userId: user.id
       } : {
         userId: user.id,
         preferredCounselorId: null,
@@ -83,98 +80,71 @@ export async function POST(req: Request) {
       conversationHistory: flatHistory,
       userRole: user.role,
       availableCounselors,
+      ...context
     }
 
-    // Create AI Agent instance
-    const aiAgent = new AIAgent(aiContext)
+    // Process message with BookingAgent
+    const response = await BookingAgent.processMessage(
+      message,
+      user.id,
+      context?.conversationId,
+      enhancedContext
+    )
 
-    // Handle booking approval case
-    if (bookingDetails && (message.toLowerCase().includes('yes') || message.toLowerCase().includes('confirm'))) {
-      try {
-        // Create the booking directly using the provided details
-        const booking = await aiAgent.createBooking(bookingDetails)
-        
-        if (booking) {
-          const aiResponse = aiAgent.generateBookingConfirmation(booking)
-          
-          // Store conversation in database
-          const conversation = await prisma.aIConversation.create({
-            data: {
-              userId: user.id,
-              messages: [
-                { role: "user", content: message },
-                { role: "assistant", content: aiResponse }
-              ],
-            },
-          })
-
-          return new Response(JSON.stringify({ 
-            response: aiResponse,
-            conversationId: conversation.id 
-          }), { 
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-          })
-        }
-      } catch (error) {
-        console.error("Booking creation failed:", error)
-        const errorResponse = `I encountered an issue while trying to book your session: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or contact support.`
-        
-        // Store conversation in database
-        const conversation = await prisma.aIConversation.create({
-          data: {
-            userId: user.id,
-            messages: [
-              { role: "user", content: message },
-              { role: "assistant", content: errorResponse }
-            ],
-          },
-        })
-
-        return new Response(JSON.stringify({ 
-          response: errorResponse,
-          conversationId: conversation.id 
-        }), { 
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-        })
-      }
+    // Save conversation
+    if (conversationHistory) {
+      const conversationId = await BookingAgent.saveConversation(
+        user.id,
+        [...conversationHistory, { role: 'user', content: message }],
+        enhancedContext
+      )
+      response.conversationId = conversationId || undefined
     }
 
-    // Generate AI response for normal messages
-    const aiResponse = await aiAgent.generateResponse(message)
-
-    // Store conversation in database
-    const conversation = await prisma.aIConversation.create({
-      data: {
-        userId: user.id,
-        messages: [
-          { role: "user", content: message },
-          { role: "assistant", content: aiResponse }
-        ],
-        context: {
-          userPreferences,
-          userRole: user.role,
-        },
-      },
-    })
-
-    return new Response(JSON.stringify({ 
-      content: aiResponse,
-      conversationId: conversation.id
-    }), { 
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    })
+    return NextResponse.json(response)
 
   } catch (error) {
-    console.error("Chat API error:", error)
-    return new Response(JSON.stringify({ 
-      error: "Internal server error",
-      details: error instanceof Error ? error.message : "Unknown error"
-    }), { 
-      status: 500,
-      headers: { "Content-Type": "application/json" }
+    console.error('Chat API error:', error)
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        message: 'I apologize, but I encountered an error. Please try again.'
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// GET endpoint to retrieve conversation history
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get('userId')
+    const conversationId = searchParams.get('conversationId')
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const conversations = await prisma.aIConversation.findMany({
+      where: {
+        userId,
+        ...(conversationId ? { id: conversationId } : {})
+      },
+      orderBy: { createdAt: 'desc' },
+      take: conversationId ? 1 : 10
     })
+
+    return NextResponse.json({ conversations })
+
+  } catch (error) {
+    console.error('Chat history API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to retrieve conversation history' },
+      { status: 500 }
+    )
   }
 }

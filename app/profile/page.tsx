@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { ProfileForm } from "@/components/profile/profile-form"

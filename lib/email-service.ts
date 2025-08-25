@@ -3,6 +3,7 @@ import { render } from '@react-email/render'
 import { BookingConfirmationEmail } from '../emails/booking-confirmation'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+const DEFAULT_FROM = process.env.RESEND_FROM || 'AI Booking Agent <onboarding@resend.dev>'
 
 interface SendBookingConfirmationParams {
   userEmail: string
@@ -35,7 +36,7 @@ export class EmailService {
       )
 
       const { data, error } = await resend.emails.send({
-        from: 'AI Booking Agent <noreply@franc-dev.space>',
+        from: DEFAULT_FROM,
         to: [userEmail],
         subject: `Booking Confirmed: Session with ${counselorName}`,
         html: emailHtml,
@@ -100,7 +101,7 @@ export class EmailService {
   ) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'AI Booking Agent <noreply@franc-dev.space>',
+        from: DEFAULT_FROM,
         to: [userEmail],
         subject: `Reminder: Your session with ${counselorName} starts in 30 minutes`,
         html: `
@@ -144,7 +145,7 @@ export class EmailService {
   ) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'AI Booking Agent <noreply@franc-dev.space>',
+        from: DEFAULT_FROM,
         to: [userEmail],
         subject: `Session Cancelled: ${counselorName} on ${appointmentDate}`,
         html: `
@@ -171,6 +172,54 @@ export class EmailService {
       return data
     } catch (error) {
       console.error('Cancellation email service error:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Notify counselor of a new booking
+   */
+  static async sendCounselorNotification(params: {
+    counselorEmail: string
+    counselorName: string
+    userName: string
+    appointmentDate: string
+    appointmentTime: string
+    meetingLink?: string
+    notes?: string
+  }) {
+    try {
+      const { counselorEmail, counselorName, userName, appointmentDate, appointmentTime, meetingLink, notes } = params
+      const { data, error } = await resend.emails.send({
+        from: DEFAULT_FROM,
+        to: [counselorEmail],
+        subject: `New Session Booked: ${userName} on ${appointmentDate}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>New Booking</h2>
+            <p>Hello ${counselorName},</p>
+            <p>A new counseling session has been booked.</p>
+            <ul>
+              <li><strong>Client:</strong> ${userName}</li>
+              <li><strong>Date:</strong> ${appointmentDate}</li>
+              <li><strong>Time:</strong> ${appointmentTime}</li>
+              ${meetingLink ? `<li><strong>Meeting Link:</strong> <a href="${meetingLink}">${meetingLink}</a></li>` : ''}
+              ${notes ? `<li><strong>Notes:</strong> ${notes}</li>` : ''}
+            </ul>
+            <p>Please be ready a few minutes before the session.</p>
+          </div>
+        `,
+        text: `New booking with ${userName} on ${appointmentDate} at ${appointmentTime}.${meetingLink ? ` Meeting: ${meetingLink}.` : ''}${notes ? ` Notes: ${notes}` : ''}`
+      })
+
+      if (error) {
+        console.error('Failed to send counselor notification:', error)
+        throw new Error(`Counselor notification failed: ${error.message}`)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Counselor notification error:', error)
       throw error
     }
   }

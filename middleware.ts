@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifyJWT } from "./lib/auth"
+import { verifyJWT } from "./lib/auth-utils"
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -8,16 +8,34 @@ export async function middleware(request: NextRequest) {
   const protectedRoutes = ["/dashboard", "/booking", "/counselor", "/admin", "/profile"]
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
 
+  // Login pages (should not redirect authenticated users)
+  const loginPages = ["/user/login", "/counselor/login", "/admin/login"]
+  const isLoginPage = loginPages.includes(pathname)
+
   if (isProtectedRoute) {
     const token = request.cookies.get("auth-token")?.value
 
     if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      // Redirect to appropriate login page based on the protected route
+      if (pathname.startsWith("/admin")) {
+        return NextResponse.redirect(new URL("/admin/login", request.url))
+      } else if (pathname.startsWith("/counselor")) {
+        return NextResponse.redirect(new URL("/counselor/login", request.url))
+      } else {
+        return NextResponse.redirect(new URL("/user/login", request.url))
+      }
     }
 
     const jwtData = await verifyJWT(token)
     if (!jwtData) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      // Redirect to appropriate login page based on the protected route
+      if (pathname.startsWith("/admin")) {
+        return NextResponse.redirect(new URL("/admin/login", request.url))
+      } else if (pathname.startsWith("/counselor")) {
+        return NextResponse.redirect(new URL("/counselor/login", request.url))
+      } else {
+        return NextResponse.redirect(new URL("/user/login", request.url))
+      }
     }
 
     // Role-based access control
@@ -51,16 +69,28 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users away from login page
-  if (pathname === "/login") {
+  // Handle login pages - redirect authenticated users to appropriate dashboard
+  if (isLoginPage) {
     const token = request.cookies.get("auth-token")?.value
     if (token) {
       const jwtData = await verifyJWT(token)
       if (jwtData) {
-        // Redirect to dashboard - role-based redirect will be handled by the verify route
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        const { role } = jwtData
+        // Redirect to appropriate dashboard based on role
+        if (role === "ADMIN") {
+          return NextResponse.redirect(new URL("/admin/users", request.url))
+        } else if (role === "COUNSELOR") {
+          return NextResponse.redirect(new URL("/counselor", request.url))
+        } else {
+          return NextResponse.redirect(new URL("/dashboard", request.url))
+        }
       }
     }
+  }
+
+  // Legacy login redirect (for backward compatibility)
+  if (pathname === "/login") {
+    return NextResponse.redirect(new URL("/user/login", request.url))
   }
 
   return NextResponse.next()

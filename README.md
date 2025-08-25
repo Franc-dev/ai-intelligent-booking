@@ -1,357 +1,287 @@
-# AI Booking Agent 🤖📅
+# AI-Powered Mental Health Booking Agent
 
-A sophisticated, AI-powered counseling session booking system built with Next.js, featuring intelligent conversation-based scheduling, role-based authentication, and robust meeting room management.
+A comprehensive, intelligent mental health booking system built with Next.js 15, TypeScript, and OpenRouter AI. This system provides natural conversation capabilities, automated booking workflows, and robust conflict resolution for counseling sessions.
 
 ## ✨ Features
 
-### 🧠 AI-Powered Booking
-- **Intelligent Conversation Interface** - Natural language booking through AI chat
-- **Smart Counselor Matching** - AI suggests counselors based on user concerns
-- **Conflict Detection** - Prevents double-booking and time overlaps
-- **Dynamic Availability** - Real-time time slot management
-
-### 🔐 Role-Based Authentication
-- **Multi-Role System** - USER, COUNSELOR, and ADMIN roles
-- **Secure Access Control** - Role-appropriate dashboards and features
-- **Magic Link Authentication** - Passwordless login system
-- **Protected Routes** - Middleware-based security
-
-### 🏢 Meeting Room Management
-- **Pool of Video Conference Links** - Efficient room assignment
-- **Automatic Conflict Prevention** - No simultaneous room usage
-- **Fallback System** - Generates new links when needed
-- **Real-time Status Monitoring** - Admin dashboard for room usage
-
-### 📧 Professional Communication
-- **Beautiful Email Templates** - React Email integration
-- **Automatic Confirmations** - Instant booking confirmations
-- **Meeting Details** - Complete session information
-- **Resend Integration** - Reliable email delivery
-
-### 📱 Modern User Experience
-- **Responsive Design** - Mobile-first approach
-- **Beautiful UI Components** - Radix UI + Tailwind CSS
-- **Real-time Updates** - Dynamic content without page refresh
-- **Accessibility** - WCAG compliant components
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   Database      │
-│   (Next.js)     │◄──►│   (API Routes)  │◄──►│   (PostgreSQL)  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │              ┌─────────────────┐              │
-         │              │   External      │              │
-         │              │   Services      │              │
-         │              └─────────────────┘              │
-         │              │ • OpenRouter AI │              │
-         │              │ • Resend Email  │              │
-         │              │ • JWT Auth      │              │
-         └──────────────┴─────────────────┴──────────────┘
-```
-
-### **Technology Stack**
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS, Radix UI components
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT-based magic link system
-- **AI**: OpenRouter API integration
-- **Email**: Resend with React Email templates
-- **Package Manager**: pnpm
+- **🧠 AI-Powered Conversations**: Natural language understanding for mental health support
+- **📅 Smart Booking System**: Conflict-free appointment scheduling with real-time availability
+- **🎯 Intent Recognition**: Automatically detects booking requests, mental health queries, and crisis situations
+- **📱 Modern UI**: Responsive design with seamless chat-to-booking flow
+- **🔒 Secure & Reliable**: Authentication, validation, and comprehensive error handling
+- **💬 Context Awareness**: Maintains conversation history and user preferences
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ 
 - PostgreSQL database
-- pnpm package manager
-- Resend account (for emails)
-- OpenRouter API key (for AI)
+- OpenRouter API key ([Get one here](https://openrouter.ai/))
 
-### 1. Clone & Install
+### Installation
+
+1. **Clone the repository**
 ```bash
-git clone <repository-url>
+   git clone <your-repo-url>
 cd ai-booking-agent
+   ```
+
+2. **Install dependencies**
+   ```bash
 pnpm install
 ```
 
-### 2. Environment Setup
-Create `.env.local`:
+3. **Environment setup**
 ```bash
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/ai_booking_agent"
-
-# JWT Secret
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-
-# OpenRouter AI API
+   cp .env.example .env
+   ```
+   
+   Configure your `.env` file:
+   ```env
+   DATABASE_URL="postgresql://username:password@localhost:5432/ai_booking"
 OPENROUTER_API_KEY="your-openrouter-api-key"
+   NEXTAUTH_SECRET="your-secret-key"
+   NEXTAUTH_URL="http://localhost:3000"
+   ```
 
-# Resend Email Service
-RESEND_API_KEY="your-resend-api-key"
-
-# App URL
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-```
-
-### 3. Database Setup
+4. **Database setup**
 ```bash
 # Generate Prisma client
-pnpm prisma generate
+   pnpm db:generate
 
-# Run migrations
-pnpm prisma migrate dev
+   # Push schema to database
+   pnpm db:push
 
 # Seed with sample data
-pnpm prisma db seed
+   pnpm db:seed
 ```
 
-### 4. Start Development
+5. **Start development server**
 ```bash
 pnpm dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to see your app!
+6. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 📚 Available Scripts
+## 🏗️ System Architecture
 
-```bash
-pnpm dev          # Start development server
-pnpm build        # Build for production
-pnpm start        # Start production server
-pnpm lint         # Run ESLint
-pnpm db:generate  # Generate Prisma client
-pnpm db:push      # Push schema to database
-pnpm db:migrate   # Run database migrations
-pnpm db:studio    # Open Prisma Studio
-pnpm db:seed      # Seed database with sample data
+### Core Components
+
+- **`BookingAgent`** (`lib/agent.ts`): AI-powered conversation processing and intent analysis
+- **Chat Interface** (`components/chat/`): Modern chat UI with AI integration
+- **Booking Form** (`components/booking/`): Multi-step appointment scheduling
+- **API Routes** (`app/api/`): RESTful endpoints for all system operations
+- **Database** (`prisma/`): PostgreSQL with Prisma ORM
+
+### Data Flow
+
+```
+User Message → AI Analysis → Intent Detection → Response Generation → UI Update
+     ↓
+If Booking Intent → Show Form → User Input → Validation → Booking Creation
+     ↓
+Confirmation → Meeting Setup → Session Scheduled
 ```
 
-## 🎯 User Roles & Access
+## 💬 How It Works
 
-### **USER** (Default Role)
-- **Access**: Dashboard, Booking, Profile
-- **Features**: Book sessions, view history, manage preferences
-- **Pages**: `/dashboard`, `/booking`, `/profile`
+### 1. Natural Conversation
+Users can chat naturally with the AI about their mental health needs:
 
-### **COUNSELOR**
-- **Access**: Counselor Dashboard, Sessions, Clients, Profile
-- **Features**: View scheduled sessions, manage availability
-- **Pages**: `/counselor`, `/profile`
+```
+User: "I'm feeling anxious about work lately"
+AI: "I understand that work-related anxiety can be really challenging. 
+     It's great that you're reaching out for support. I can help you 
+     find a counselor who specializes in anxiety and workplace stress. 
+     Would you like to book a session?"
+```
 
-### **ADMIN**
-- **Access**: Admin Dashboard, Meeting Links, Users, Counselors
-- **Features**: System monitoring, user management, room status
-- **Pages**: `/dashboard`, `/admin/*`, `/profile`
+### 2. Intelligent Intent Recognition
+The AI automatically detects:
+- **Booking requests**: "I need to book a session"
+- **Mental health queries**: "What are signs of depression?"
+- **Crisis situations**: "I'm having thoughts of harming myself"
+- **General support**: "How can I manage stress?"
 
-## 🔧 Configuration
+### 3. Seamless Booking Flow
+When a booking is requested:
+1. **Counselor Selection**: Browse by specialty, view profiles
+2. **Time Selection**: Choose date/time with real-time availability
+3. **Confirmation**: Review details and confirm booking
+4. **Session Creation**: Automatic meeting setup and confirmation
 
-### Meeting Room Links
-Default video conference links in `lib/meeting-links.ts`:
+### 4. Crisis Intervention
+For urgent situations, the AI provides immediate resources:
+- Emergency contact numbers
+- Crisis hotlines
+- Professional help guidance
+
+## 🔧 API Endpoints
+
+### Chat
+- `POST /api/chat` - Process user messages with AI
+- `GET /api/chat` - Retrieve conversation history
+
+### Counselors
+- `GET /api/counselors` - Fetch available counselors
+- `GET /api/counselors?specialty=anxiety` - Filter by specialty
+
+### Booking
+- `POST /api/booking/availability` - Check time slot availability
+- `POST /api/booking/create` - Create new appointment
+
+## 🎨 Customization
+
+### AI Behavior
+Modify the AI's personality and responses in `lib/agent.ts`:
+
 ```typescript
-const MEETING_LINKS = [
-  "https://meet.google.com/edk-quho-xck",
-  "https://meet.google.com/ycw-qhgp-aiy",
-  // ... more links
-]
+const MENTAL_HEALTH_CONTEXT = `
+You are a compassionate mental health AI assistant that helps users with:
+1. Booking counseling sessions
+2. Providing general mental health information and support
+3. Crisis intervention guidance
+4. Self-care tips and coping strategies
+5. Understanding different therapy types and approaches
+`
 ```
 
-### Counselor Availability
-Set working hours in the database:
-```sql
-INSERT INTO counselor_availability (counselor_id, day_of_week, start_time, end_time) VALUES
-('counselor_1', 1, '09:00', '17:00'), -- Monday 9 AM - 5 PM
-('counselor_1', 2, '09:00', '17:00'), -- Tuesday 9 AM - 5 PM
-```
+### UI Components
+Customize the interface in `components/`:
+- Chat interface styling
+- Booking form steps
+- Color schemes and branding
+- Mobile responsiveness
 
-## 📱 Usage Guide
-
-### For End Users
-1. **Navigate to `/booking`**
-2. **Chat with AI** about your counseling needs
-3. **AI suggests counselors** based on your concerns
-4. **Choose time slots** from available options
-5. **Receive confirmation** with meeting details and email
-
-### For Counselors
-1. **Login with counselor account**
-2. **View scheduled sessions** on dashboard
-3. **Manage availability** and specialties
-4. **Access client information** and session details
-
-### For Administrators
-1. **Monitor system status** on admin dashboard
-2. **Manage meeting rooms** and usage statistics
-3. **Oversee users and counselors**
-4. **Track booking metrics** and system health
-
-## 🔌 API Endpoints
-
-### Authentication
-- `POST /api/auth/send-magic-link` - Send login link
-- `GET /api/auth/verify` - Verify login token
-- `GET /api/auth/me` - Get current user info
-- `POST /api/auth/logout` - Logout user
-
-### Booking System
-- `POST /api/chat` - AI conversation and booking creation
-- `GET /api/preferences` - Get user preferences
-- `POST /api/preferences` - Update user preferences
-
-### Admin System
-- `GET /api/admin/meeting-links/status` - Meeting room status
-- `GET /api/admin/users` - User management (coming soon)
-- `GET /api/admin/counselors` - Counselor management (coming soon)
-
-### Profile Management
-- `GET /api/profile` - Get user profile
-- `POST /api/profile` - Update user profile
+### Database Schema
+Extend the data model in `prisma/schema.prisma`:
+- Additional user fields
+- Custom counselor attributes
+- Extended booking options
+- New entity types
 
 ## 🧪 Testing
 
-### Test the Booking Flow
-1. Start the app: `pnpm dev`
-2. Go to `/booking`
-3. Ask AI: "I need help with anxiety"
-4. Follow the conversation to book a session
-5. Check email for confirmation
+### Run Tests
+```bash
+# Unit tests
+pnpm test
 
-### Test Role-Based Access
-1. Login with different role accounts
-2. Verify appropriate navigation items appear
-3. Test protected route access
-4. Check role-based redirects
+# E2E tests
+pnpm test:e2e
 
-### Test Admin Features
-1. Login as admin user
-2. Navigate to `/admin/meeting-links`
-3. Verify room status display
-4. Check system statistics
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-**Database Connection Failed**
-- Check `DATABASE_URL` in `.env.local`
-- Ensure PostgreSQL is running
-- Run `pnpm prisma generate` and `pnpm prisma migrate dev`
-
-**Email Not Sending**
-- Verify `RESEND_API_KEY` is correct
-- Check Resend account status
-- Review server logs for error details
-
-**AI Not Responding**
-- Confirm `OPENROUTER_API_KEY` is valid
-- Check API quota and limits
-- Verify network connectivity
-
-**Authentication Issues**
-- Check JWT secret configuration
-- Verify magic link setup
-- Review middleware configuration
-
-### Debug Mode
-- Check browser console for client errors
-- Review server logs for API errors
-- Use browser dev tools to inspect network requests
-- Monitor database with Prisma Studio: `pnpm prisma studio`
-
-## 🚀 Production Deployment
-
-### Environment Setup
-1. **Update URLs** to production domains
-2. **Use strong JWT secrets**
-3. **Configure production database**
-4. **Set secure cookie flags**
-
-### Security Considerations
-- Enable HTTPS
-- Implement rate limiting
-- Add admin role checks
-- Set secure environment variables
-
-### Monitoring
-- Set up logging and error tracking
-- Monitor meeting room utilization
-- Track booking success rates
-- Monitor email delivery
-
-## 📊 Performance Optimization
-
-- **Database Indexing** - Optimize queries for large datasets
-- **Caching** - Implement Redis for frequently accessed data
-- **Connection Pooling** - Configure Prisma connection limits
-- **Background Jobs** - Queue email sending for better performance
-
-## 🔮 Future Enhancements
-
-- **Calendar Integration** - Sync with external calendar systems
-- **Video Recording** - Store session recordings (with consent)
-- **Payment Processing** - Integrate billing and payment systems
-- **Multi-language Support** - Internationalization for global users
-- **Mobile App** - Native mobile applications
-- **Analytics Dashboard** - Advanced reporting and insights
-- **Role Management Interface** - Admin UI for role assignment
-- **Permission System** - Fine-grained access control
-
-## 📁 Project Structure
-
+# Type checking
+pnpm type-check
 ```
-ai-booking-agent/
-├── app/                    # Next.js app directory
-│   ├── admin/             # Admin pages and routes
-│   ├── api/               # API endpoints
-│   ├── auth/              # Authentication pages
-│   ├── booking/           # Booking interface
-│   ├── counselor/         # Counselor dashboard
-│   ├── dashboard/         # User dashboard
-│   └── profile/           # Profile management
-├── components/             # React components
-│   ├── admin/             # Admin-specific components
-│   ├── auth/              # Authentication components
-│   ├── booking/           # Booking components
-│   ├── chat/              # Chat interface components
-│   ├── dashboard/         # Dashboard components
-│   ├── profile/           # Profile components
-│   └── ui/                # Reusable UI components
-├── lib/                   # Utility libraries
-│   ├── auth.ts            # Authentication utilities
-│   ├── booking-tools.ts   # Booking logic
-│   ├── email-service.ts   # Email functionality
-│   ├── meeting-links.ts   # Meeting room management
-│   ├── openrouter.ts      # AI API integration
-│   └── prisma.ts          # Database client
-├── prisma/                # Database schema and migrations
-├── emails/                # Email templates
-└── hooks/                 # Custom React hooks
+
+### Test Data
+The system includes sample data for testing:
+- Sample counselors with specialties
+- Availability schedules
+- User accounts
+- Booking examples
+
+## 📊 Monitoring & Analytics
+
+### Built-in Monitoring
+- Conversation analytics
+- Booking success rates
+- User engagement metrics
+- Error tracking and logging
+
+### Health Checks
+- Database connectivity
+- AI service status
+- API endpoint health
+- System performance metrics
+
+## 🚀 Deployment
+
+### Production Build
+```bash
+# Build the application
+pnpm build
+
+# Start production server
+pnpm start
 ```
+
+### Environment Variables
+Ensure all production environment variables are set:
+- Database connection strings
+- API keys and secrets
+- External service URLs
+- Security configurations
+
+### Database Migration
+```bash
+# Run migrations
+pnpm db:migrate
+
+# Verify schema
+pnpm db:studio
+```
+
+## 🔒 Security Features
+
+- **Authentication**: Secure user login and session management
+- **Authorization**: Role-based access control
+- **Input Validation**: Comprehensive data sanitization
+- **SQL Injection Protection**: Prisma ORM with parameterized queries
+- **Rate Limiting**: API abuse prevention
+- **HTTPS**: Secure data transmission
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+- Follow TypeScript best practices
+- Maintain consistent code formatting
+- Write comprehensive tests
+- Update documentation for new features
+- Follow the existing code structure
+
+## 📚 Documentation
+
+- **API Reference**: Complete endpoint documentation
+- **Component Library**: UI component usage and customization
+- **Database Schema**: Data model and relationships
+- **Deployment Guide**: Production deployment instructions
+- **Troubleshooting**: Common issues and solutions
+
+## 🆘 Support
+
+### Getting Help
+- **Documentation**: Check the docs folder
+- **Issues**: Report bugs via GitHub Issues
+- **Discussions**: Join community discussions
+- **Email**: Contact the development team
+
+### Common Issues
+- **Database Connection**: Verify DATABASE_URL and network access
+- **AI Service**: Check OPENROUTER_API_KEY and API limits
+- **Build Errors**: Ensure Node.js version compatibility
+- **Runtime Errors**: Check environment variable configuration
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Support
+## 🙏 Acknowledgments
 
-For technical support or questions:
-- Check the troubleshooting section above
-- Review server logs for error details
-- Open an issue in the repository
-- Contact the development team
+- **OpenRouter** for AI capabilities
+- **Next.js** team for the amazing framework
+- **Prisma** for database management
+- **Tailwind CSS** for styling utilities
+- **Mental Health Community** for guidance and feedback
 
 ---
 
-**Built with ❤️ using Next.js, React, and modern web technologies**
-
-*The AI Booking Agent provides a robust, scalable solution for managing counseling session bookings with intelligent AI assistance and comprehensive role-based access control.*
+**Built with ❤️ for mental health support and accessibility**

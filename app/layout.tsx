@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { DM_Sans, Space_Mono } from "next/font/google"
 import "./globals.css"
 import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/sonner"
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   )

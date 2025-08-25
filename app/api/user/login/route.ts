@@ -1,17 +1,49 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createLoginToken } from "@/lib/auth"
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import * as jose from "jose"
 import { Resend } from "resend"
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { email } = await request.json()
+    const { email } = await req.json()
 
-    if (!email || !email.includes("@")) {
-      return NextResponse.json({ error: "Valid email is required" }, { status: 400 })
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
     }
 
-    const { token, user } = await createLoginToken(email)
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      }
+    })
 
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // Ensure user has USER role
+    if (user.role !== "USER") {
+      return NextResponse.json({ error: "Access denied. This endpoint is for users only." }, { status: 403 })
+    }
+
+    // Generate magic link token
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || "fallback-secret")
+    const token = await new jose.SignJWT({ 
+      userId: user.id, 
+      email: user.email, 
+      role: user.role,
+      type: "magic-link"
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("15m")
+      .sign(secret)
+
+    // Create magic link
     const magicLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/verify?token=${token}`
 
     // Send magic link via email using Resend
@@ -57,15 +89,16 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Magic link email sent to", email)
-
-    return NextResponse.json({
+    
+    return NextResponse.json({ 
       success: true,
-      message: "Magic link sent to your email",
+      message: "Magic link sent successfully",
       // Only return magic link in development for testing
-      magicLink: process.env.NODE_ENV === "development" ? magicLink : undefined,
+      magicLink: process.env.NODE_ENV === "development" ? magicLink : undefined
     })
+
   } catch (error) {
-    console.error("Error sending magic link:", error)
+    console.error("User login error:", error)
     return NextResponse.json({ error: "Failed to send magic link" }, { status: 500 })
   }
 }
