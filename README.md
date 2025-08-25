@@ -23,8 +23,7 @@ A comprehensive, intelligent mental health booking system built with Next.js 15,
 
 1. **Clone the repository**
 ```bash
-   git clone <your-repo-url>
-cd ai-booking-agent
+  git@github.com:Franc-dev/ai-intelligent-booking.git
    ```
 
 2. **Install dependencies**
