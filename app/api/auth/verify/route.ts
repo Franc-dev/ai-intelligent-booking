@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
     }
 
-    // Check if it's a magic link token
-    if (payload.type !== "magic-link") {
+    // Accept both login magic-link and signup verification tokens
+    if (payload.type !== "magic-link" && payload.type !== "verification") {
       return NextResponse.json({ error: "Invalid token type" }, { status: 400 })
     }
 
