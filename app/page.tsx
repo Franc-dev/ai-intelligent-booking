@@ -25,6 +25,8 @@ import {
 import { useState } from "react"
 
 export default function LandingPage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  
   // Featured counselors data
   const featuredCounselors = [
     {
@@ -91,27 +93,36 @@ export default function LandingPage() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <Button variant="ghost" size="sm" className="p-2">
-                <Menu className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-2"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle mobile menu"
+                aria-expanded={isMobileMenuOpen}
+              >
+                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
           </div>
 
           {/* Mobile Navigation */}
-          <div className="sm:hidden py-4 border-t border-gray-200">
-            <div className="flex flex-col space-y-2">
-              <Link href="/user/login">
-                <Button variant="outline" className="w-full border-2 border-black">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/booking">
-                <Button className="w-full bg-primary text-primary-foreground">
-                  Book Session
-                </Button>
-              </Link>
+          {isMobileMenuOpen && (
+            <div className="sm:hidden py-4 border-t border-gray-200 bg-white">
+              <div className="flex flex-col space-y-2">
+                <Link href="/user/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full border-2 border-black">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full bg-primary text-primary-foreground">
+                    Book Session
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </nav>
 
