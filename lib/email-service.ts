@@ -5,6 +5,15 @@ import { BookingConfirmationEmail } from '../emails/booking-confirmation'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const DEFAULT_FROM = process.env.RESEND_FROM || 'AI Booking Agent <onboarding@resend.dev>'
 
+function ensureEmailEnv() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is missing')
+  }
+  if (!DEFAULT_FROM) {
+    throw new Error('RESEND_FROM is missing or invalid')
+  }
+}
+
 interface SendBookingConfirmationParams {
   userEmail: string
   userName: string
@@ -21,6 +30,10 @@ export class EmailService {
    */
   static async sendBookingConfirmation(params: SendBookingConfirmationParams) {
     try {
+      ensureEmailEnv()
+      if (!params.userEmail) {
+        throw new Error('Recipient userEmail is empty')
+      }
       const { userEmail, userName, counselorName, appointmentDate, appointmentTime, meetingLink, notes } = params
 
       // Render the React email component to HTML
@@ -100,6 +113,10 @@ export class EmailService {
     meetingLink: string
   ) {
     try {
+      ensureEmailEnv()
+      if (!userEmail) {
+        throw new Error('Recipient userEmail is empty')
+      }
       const { data, error } = await resend.emails.send({
         from: DEFAULT_FROM,
         to: [userEmail],
@@ -144,6 +161,10 @@ export class EmailService {
     appointmentTime: string
   ) {
     try {
+      ensureEmailEnv()
+      if (!userEmail) {
+        throw new Error('Recipient userEmail is empty')
+      }
       const { data, error } = await resend.emails.send({
         from: DEFAULT_FROM,
         to: [userEmail],
@@ -189,6 +210,10 @@ export class EmailService {
     notes?: string
   }) {
     try {
+      ensureEmailEnv()
+      if (!params.counselorEmail) {
+        throw new Error('Recipient counselorEmail is empty')
+      }
       const { counselorEmail, counselorName, userName, appointmentDate, appointmentTime, meetingLink, notes } = params
       const { data, error } = await resend.emails.send({
         from: DEFAULT_FROM,
