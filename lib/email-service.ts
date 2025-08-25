@@ -248,4 +248,127 @@ export class EmailService {
       throw error
     }
   }
+
+  /**
+   * Send magic link for user login
+   */
+  static async sendMagicLink(params: {
+    userEmail: string
+    userName: string
+    magicLink: string
+  }) {
+    try {
+      ensureEmailEnv()
+      if (!params.userEmail) {
+        throw new Error('Recipient userEmail is empty')
+      }
+      const { userEmail, userName, magicLink } = params
+      
+      const { data, error } = await resend.emails.send({
+        from: DEFAULT_FROM,
+        to: [userEmail],
+        subject: 'Sign in to AI Booking Agent',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #10b981;">🔐 Sign In to AI Booking Agent</h2>
+            <p>Hi ${userName},</p>
+            <p>Click the button below to sign in to your account:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${magicLink}" style="background-color: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                🚀 Sign In Now
+              </a>
+            </div>
+            <p><strong>Or copy this link:</strong></p>
+            <p style="background-color: #f3f4f6; padding: 10px; border-radius: 4px; word-break: break-all; font-family: monospace;">
+              ${magicLink}
+            </p>
+            <p><strong>Important:</strong></p>
+            <ul>
+              <li>This link will expire in 15 minutes</li>
+              <li>If you didn't request this link, please ignore this email</li>
+            </ul>
+            <p>Need help? Contact us at support@franc-dev.space</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px;">
+              © 2024 AI Booking Agent. All rights reserved.
+            </p>
+          </div>
+        `,
+        text: `Sign In to AI Booking Agent\n\nHi ${userName},\n\nClick this link to sign in to your account:\n\n${magicLink}\n\nThis link will expire in 15 minutes.\n\nNeed help? Contact us at support@franc-dev.space`,
+      })
+
+      if (error) {
+        console.error('Failed to send magic link email:', error)
+        throw new Error(`Magic link email failed: ${error.message}`)
+      }
+
+      console.log('Magic link email sent successfully:', data)
+      return data
+    } catch (error) {
+      console.error('Magic link email service error:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Send signup confirmation email
+   */
+  static async sendSignupConfirmation(params: {
+    userEmail: string
+    userName: string
+    magicLink: string
+  }) {
+    try {
+      ensureEmailEnv()
+      if (!params.userEmail) {
+        throw new Error('Recipient userEmail is empty')
+      }
+      const { userEmail, userName, magicLink } = params
+      
+      const { data, error } = await resend.emails.send({
+        from: DEFAULT_FROM,
+        to: [userEmail],
+        subject: 'Welcome to AI Booking Agent - Account Created',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #10b981;">🎉 Welcome to AI Booking Agent!</h2>
+            <p>Hi ${userName},</p>
+            <p>Your account has been successfully created. Click the button below to verify your email and start booking counseling sessions:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${magicLink}" style="background-color: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                🚀 Verify Your Account
+              </a>
+            </div>
+            <p><strong>Or copy this link:</strong></p>
+            <p style="background-color: #f3f4f6; padding: 10px; border-radius: 4px; word-break: break-all; font-family: monospace;">
+              ${magicLink}
+            </p>
+            <p><strong>Important:</strong></p>
+            <ul>
+              <li>This link will expire in 15 minutes</li>
+              <li>You can now book sessions with our expert counselors</li>
+              <li>Complete your profile for personalized recommendations</li>
+            </ul>
+            <p>Need help? Contact us at support@franc-dev.space</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px;">
+              © 2024 AI Booking Agent. All rights reserved.
+            </p>
+          </div>
+        `,
+        text: `Welcome to AI Booking Agent!\n\nHi ${userName},\n\nYour account has been successfully created. Use this link to verify your email and start booking counseling sessions:\n\n${magicLink}\n\nThis link will expire in 15 minutes.\n\nNeed help? Contact us at support@franc-dev.space`,
+      })
+
+      if (error) {
+        console.error('Failed to send signup confirmation email:', error)
+        throw new Error(`Signup confirmation email failed: ${error.message}`)
+      }
+
+      console.log('Signup confirmation email sent successfully:', data)
+      return data
+    } catch (error) {
+      console.error('Signup confirmation email service error:', error)
+      throw error
+    }
+  }
 }
