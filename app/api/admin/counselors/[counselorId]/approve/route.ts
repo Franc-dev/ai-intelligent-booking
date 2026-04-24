@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ counselorId: string }> }
 ) {
-  const { userId } = await params
+  const { counselorId } = await params
 
   const admin = await getCurrentUser()
   if (!admin || admin.role !== "ADMIN") {
@@ -26,11 +26,18 @@ export async function POST(
     rejectionReason = formData?.get("rejectionReason")?.toString()?.trim() || null
   }
 
+  const counselor = await prisma.counselor.findUnique({
+    where: { id: counselorId },
+    select: { email: true },
+  })
+  if (!counselor) {
+    return NextResponse.json({ error: "Counselor not found" }, { status: 404 })
+  }
+
   const counselorUser = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { email: counselor.email },
     select: { id: true, role: true, email: true },
   })
-
   if (!counselorUser || counselorUser.role !== "COUNSELOR") {
     return NextResponse.json({ error: "Counselor user not found" }, { status: 404 })
   }
@@ -55,8 +62,8 @@ export async function POST(
     data,
   })
 
-  await prisma.counselor.updateMany({
-    where: { email: counselorUser.email },
+  await prisma.counselor.update({
+    where: { id: counselorId },
     data: { isActive: action === "approve" },
   })
 

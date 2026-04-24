@@ -123,11 +123,11 @@ export default async function AdminCounselorsPage({
                     </div>
                     {counselorUser && (
                       <div className="flex gap-2">
-                        <form action={`/api/admin/counselors/${counselorUser.id}/approve`} method="post">
+                        <form action={`/api/admin/counselors/${counselor.id}/approve`} method="post">
                           <input type="hidden" name="action" value="approve" />
                           <Button type="submit" size="sm" className="border-2 border-black">Approve</Button>
                         </form>
-                        <form action={`/api/admin/counselors/${counselorUser.id}/approve`} method="post">
+                        <form action={`/api/admin/counselors/${counselor.id}/approve`} method="post">
                           <input type="hidden" name="action" value="reject" />
                           <Button type="submit" size="sm" variant="destructive">Reject</Button>
                         </form>
@@ -230,11 +230,11 @@ export default async function AdminCounselorsPage({
                     </Badge>
                     {counselorUser && (
                       <div className="flex gap-2">
-                        <form action={`/api/admin/counselors/${counselorUser.id}/approve`} method="post">
+                        <form action={`/api/admin/counselors/${counselor.id}/approve`} method="post">
                           <input type="hidden" name="action" value="approve" />
                           <Button type="submit" size="sm" variant="outline" className="border-2 border-black">Approve</Button>
                         </form>
-                        <form action={`/api/admin/counselors/${counselorUser.id}/approve`} method="post">
+                        <form action={`/api/admin/counselors/${counselor.id}/approve`} method="post">
                           <input type="hidden" name="action" value="reject" />
                           <Button type="submit" size="sm" variant="destructive">Reject</Button>
                         </form>
