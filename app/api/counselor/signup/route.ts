@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       data: {
         email: email.toLowerCase(),
         name: name.trim(),
-        role: "COUNSELOR"
+        role: "COUNSELOR",
+        counselorApprovalStatus: "PENDING"
       }
     })
 
@@ -37,9 +38,9 @@ export async function POST(request: NextRequest) {
     await prisma.counselor.create({
       data: {
         id: user.id,
-        name: user.name,
+        name: user.name || name.trim(),
         email: user.email,
-        isActive: true,
+        isActive: false,
         specialties: [],
         bio: ""
       }
@@ -70,10 +71,10 @@ export async function POST(request: NextRequest) {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #10b981;">🎉 Welcome to AI Booking Agent!</h2>
           <p>Hi ${name},</p>
-          <p>Your counselor account has been successfully created. Click the button below to verify your email and access your dashboard:</p>
+          <p>Your counselor account has been created. Verify your email first, then wait for admin approval before full dashboard access.</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${magicLink}" style="background-color: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-              🚀 Access Your Counselor Dashboard
+              Verify Email
             </a>
           </div>
           <p><strong>Or copy this link:</strong></p>
@@ -83,8 +84,8 @@ export async function POST(request: NextRequest) {
           <p><strong>Important:</strong></p>
           <ul>
             <li>This link will expire in 15 minutes</li>
-            <li>You can now start accepting client bookings</li>
-            <li>Complete your profile to attract more clients</li>
+            <li>Your account will remain pending until approved by an admin</li>
+            <li>You will see a pending page until approval is complete</li>
           </ul>
           <p>Need help? Contact us at support@franc-dev.space</p>
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">

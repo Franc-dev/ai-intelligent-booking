@@ -15,10 +15,23 @@ export default async function CounselorClientsPage() {
     redirect("/dashboard")
   }
 
+  if (user.counselorApprovalStatus !== "APPROVED") {
+    redirect("/counselor/pending")
+  }
+
+  const counselor = await prisma.counselor.findUnique({
+    where: { email: user.email },
+    select: { id: true },
+  })
+
+  if (!counselor) {
+    redirect("/counselor/pending")
+  }
+
   // Get counselor's clients (users who have booked sessions)
   const clients = await prisma.booking.findMany({
     where: {
-      counselorId: user.id,
+      counselorId: counselor.id,
       status: { in: ["CONFIRMED", "COMPLETED"] }
     },
     include: {

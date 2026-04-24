@@ -16,10 +16,22 @@ export default async function CounselorNotesPage() {
     redirect("/dashboard")
   }
 
+  if (user.counselorApprovalStatus !== "APPROVED") {
+    redirect("/counselor/pending")
+  }
+
+  const counselor = await prisma.counselor.findUnique({
+    where: { email: user.email },
+    select: { id: true },
+  })
+  if (!counselor) {
+    redirect("/counselor/pending")
+  }
+
   // Get counselor's sessions with notes
   const sessions = await prisma.booking.findMany({
     where: {
-      counselorId: user.id,
+      counselorId: counselor.id,
       status: { in: ["COMPLETED", "CONFIRMED"] }
     },
     include: {

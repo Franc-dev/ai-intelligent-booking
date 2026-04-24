@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const loginPages = ["/user/login", "/counselor/login", "/admin/login"]
   const isLoginPage = loginPages.includes(pathname)
 
-  if (isProtectedRoute) {
+  if (isProtectedRoute && !isLoginPage) {
     const token = request.cookies.get("auth-token")?.value
 
     if (!token) {
@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
     // Prevent admins and counselors from accessing user dashboard
     if (pathname === "/dashboard" && (role === "ADMIN" || role === "COUNSELOR")) {
       if (role === "ADMIN") {
-        return NextResponse.redirect(new URL("/admin/users", request.url))
+        return NextResponse.redirect(new URL("/admin", request.url))
       } else if (role === "COUNSELOR") {
         return NextResponse.redirect(new URL("/counselor", request.url))
       }
@@ -62,7 +62,7 @@ export async function middleware(request: NextRequest) {
     // Prevent non-counselors from accessing counselor routes
     if (pathname.startsWith("/counselor") && role !== "COUNSELOR") {
       if (role === "ADMIN") {
-        return NextResponse.redirect(new URL("/admin/users", request.url))
+        return NextResponse.redirect(new URL("/admin", request.url))
       } else {
         return NextResponse.redirect(new URL("/dashboard", request.url))
       }
@@ -78,7 +78,7 @@ export async function middleware(request: NextRequest) {
         const { role } = jwtData
         // Redirect to appropriate dashboard based on role
         if (role === "ADMIN") {
-          return NextResponse.redirect(new URL("/admin/users", request.url))
+          return NextResponse.redirect(new URL("/admin", request.url))
         } else if (role === "COUNSELOR") {
           return NextResponse.redirect(new URL("/counselor", request.url))
         } else {

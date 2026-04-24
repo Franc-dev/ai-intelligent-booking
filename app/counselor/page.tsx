@@ -1,7 +1,6 @@
 import { getCurrentUser } from "@/lib/auth-utils"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { Navigation } from "@/components/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,12 +19,25 @@ export default async function CounselorDashboardPage() {
     redirect("/dashboard")
   }
 
+  if (user.counselorApprovalStatus !== "APPROVED") {
+    redirect("/counselor/pending")
+  }
+
+  const counselor = await prisma.counselor.findUnique({
+    where: { email: user.email },
+    select: { id: true },
+  })
+
+  if (!counselor) {
+    redirect("/counselor/pending")
+  }
+
   // Get counselor's upcoming and past sessions
   const now = new Date()
   
   const upcomingSessions = await prisma.booking.findMany({
     where: {
-      counselorId: user.id,
+      counselorId: counselor.id,
       scheduledAt: {
         gte: now,
       },
@@ -48,7 +60,7 @@ export default async function CounselorDashboardPage() {
 
   const pastSessions = await prisma.booking.findMany({
     where: {
-      counselorId: user.id,
+      counselorId: counselor.id,
       scheduledAt: {
         lt: now,
       },
@@ -75,10 +87,7 @@ export default async function CounselorDashboardPage() {
   )
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation userRole={user.role} userName={user.name} />
-      
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="font-sans font-bold text-3xl mb-2">Counselor Dashboard</h1>
           <p className="text-muted-foreground font-sans">
@@ -205,9 +214,11 @@ export default async function CounselorDashboardPage() {
                         {session.status}
                       </Badge>
                       {session.meetingLink && (
-                        <Button size="sm" variant="outline" className="border-2 border-black">
+                        <Button size="sm" variant="outline" className="border-2 border-black" asChild>
+                          <a href={session.meetingLink} target="_blank" rel="noreferrer">
                           <Video className="h-4 w-4 mr-2" />
                           Join
+                          </a>
                         </Button>
                       )}
                     </div>
@@ -254,9 +265,11 @@ export default async function CounselorDashboardPage() {
                         {session.status}
                       </Badge>
                       {session.meetingLink && (
-                        <Button size="sm" variant="outline" className="border-2 border-black">
+                        <Button size="sm" variant="outline" className="border-2 border-black" asChild>
+                          <a href={session.meetingLink} target="_blank" rel="noreferrer">
                           <Video className="h-4 w-4 mr-2" />
                           Join
+                          </a>
                         </Button>
                       )}
                     </div>
@@ -326,7 +339,6 @@ export default async function CounselorDashboardPage() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   )
 }

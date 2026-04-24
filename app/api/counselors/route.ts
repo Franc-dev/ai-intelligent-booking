@@ -20,6 +20,12 @@ export async function GET(req: NextRequest) {
 
     // Build where clause
     const where: any = { isActive: true }
+    const approvedCounselorUsers = await prisma.user.findMany({
+      where: { role: "COUNSELOR", counselorApprovalStatus: "APPROVED" },
+      select: { email: true },
+    })
+    where.email = { in: approvedCounselorUsers.map((u) => u.email) }
+
     if (specialty) {
       where.specialties = { has: specialty }
     }

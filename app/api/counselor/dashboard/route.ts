@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireCounselorRole } from "@/lib/auth-utils"
+import { requireApprovedCounselorRole } from "@/lib/auth-utils"
 
 async function getCounselorDashboardData(req: NextRequest, user: any) {
   try {
+    const counselor = await prisma.counselor.findUnique({
+      where: { email: user.email },
+      select: { id: true },
+    })
+
+    if (!counselor) {
+      return NextResponse.json({ error: "Counselor profile not found" }, { status: 404 })
+    }
+
     // Get counselor's sessions
     const sessions = await prisma.booking.findMany({
-      where: { counselorId: user.userId },
+      where: { counselorId: counselor.id },
       include: {
         user: {
           select: {
@@ -22,17 +31,17 @@ async function getCounselorDashboardData(req: NextRequest, user: any) {
     // Calculate stats
     const totalSessions = sessions.length
     const upcomingSessions = sessions.filter((session: any) => 
-      new Date(session.startTime || session.createdAt) > new Date()
+      new Date(session.scheduledAt) > new Date()
     )
     const pastSessions = sessions.filter((session: any) => 
-      new Date(session.startTime || session.createdAt) <= new Date()
+      new Date(session.scheduledAt) <= new Date()
     )
 
     // Get this month's sessions
     const thisMonth = new Date()
     const firstDayOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1)
     const thisMonthSessions = sessions.filter((session: any) => 
-      new Date(session.startTime || session.createdAt) >= firstDayOfMonth
+      new Date(session.scheduledAt) >= firstDayOfMonth
     )
 
     return NextResponse.json({
@@ -48,4 +57,4 @@ async function getCounselorDashboardData(req: NextRequest, user: any) {
   }
 }
 
-export const GET = requireCounselorRole(getCounselorDashboardData)
+export const GET = requireApprovedCounselorRole(getCounselorDashboardData)

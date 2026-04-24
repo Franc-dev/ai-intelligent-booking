@@ -26,8 +26,21 @@ export async function POST(req: NextRequest) {
     const endTime = new Date(scheduledAt.getTime() + duration * 60 * 1000)
 
     // Check counselor schedule
-    const counselor = await prisma.counselor.findUnique({
-      where: { id: counselorId },
+    const activeSetting = await prisma.bookingAssignmentSetting.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+      include: { selectedCounselors: true },
+    })
+
+    if (
+      activeSetting?.mode === "SELECTED_COUNSELORS" &&
+      !activeSetting.selectedCounselors.some((row) => row.counselorId === counselorId)
+    ) {
+      return NextResponse.json({ available: false, reason: "Counselor is not in current assignment scope" }, { status: 403 })
+    }
+
+    const counselor = await prisma.counselor.findFirst({
+      where: { id: counselorId, isActive: true },
       include: { 
         availability: {
           where: { isActive: true }

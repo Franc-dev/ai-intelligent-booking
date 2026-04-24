@@ -60,10 +60,11 @@ export function Navigation({ userRole, userName }: NavigationProps) {
       { href: "/counselor", label: "Dashboard", icon: Home },
       { href: "/counselor/sessions", label: "Sessions", icon: Calendar },
       { href: "/counselor/clients", label: "Clients", icon: Users },
+      { href: "/counselor/records", label: "Session Records", icon: MessageSquare },
       { href: "/profile", label: "Profile", icon: User },
     ],
     ADMIN: [
-      { href: "/dashboard", label: "Dashboard", icon: Home },
+      { href: "/admin", label: "Dashboard", icon: Home },
       { href: "/admin/meeting-links", label: "Meeting Links", icon: BarChart3 },
       { href: "/admin/users", label: "Users", icon: Users },
       { href: "/admin/counselors", label: "Counselors", icon: Users },

@@ -40,7 +40,11 @@ export default function VerifyPage() {
             if (data.user.role === 'USER') {
               router.push('/dashboard')
             } else if (data.user.role === 'COUNSELOR') {
-              router.push('/counselor')
+              if (data.user.counselorApprovalStatus === "APPROVED") {
+                router.push('/counselor')
+              } else {
+                router.push('/counselor/pending')
+              }
             } else if (data.user.role === 'ADMIN') {
               router.push('/admin/users')
             } else {

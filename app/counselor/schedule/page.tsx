@@ -14,6 +14,18 @@ export default async function CounselorSchedulePage() {
     redirect("/dashboard")
   }
 
+  if (user.counselorApprovalStatus !== "APPROVED") {
+    redirect("/counselor/pending")
+  }
+
+  const counselor = await prisma.counselor.findUnique({
+    where: { email: user.email },
+    select: { id: true },
+  })
+  if (!counselor) {
+    redirect("/counselor/pending")
+  }
+
   // Get current week's sessions
   const now = new Date()
   const weekStart = startOfWeek(now, { weekStartsOn: 1 }) // Monday start
@@ -21,7 +33,7 @@ export default async function CounselorSchedulePage() {
   
   const weekSessions = await prisma.booking.findMany({
     where: {
-      counselorId: user.id,
+      counselorId: counselor.id,
       scheduledAt: {
         gte: weekStart,
         lte: weekEnd

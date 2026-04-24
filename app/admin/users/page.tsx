@@ -55,6 +55,24 @@ export default async function AdminUsersPage() {
           </p>
         </div>
 
+        <Card className="border-2 border-black mb-8">
+          <CardHeader>
+            <CardTitle className="font-sans font-bold">Create User / Counselor / Admin</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form action="/api/admin/users/create" method="post" className="grid md:grid-cols-4 gap-3">
+              <input name="name" placeholder="Full name" className="border rounded px-3 py-2" />
+              <input name="email" type="email" required placeholder="Email" className="border rounded px-3 py-2" />
+              <select name="role" className="border rounded px-3 py-2" defaultValue="USER">
+                <option value="USER">USER</option>
+                <option value="COUNSELOR">COUNSELOR</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+              <button type="submit" className="bg-primary text-primary-foreground rounded px-3 py-2">Create</button>
+            </form>
+          </CardContent>
+        </Card>
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="border-2 border-black">

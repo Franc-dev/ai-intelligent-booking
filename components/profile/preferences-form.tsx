@@ -65,10 +65,11 @@ export function PreferencesForm() {
       const response = await fetch("/api/counselors")
       if (response.ok) {
         const data = await response.json()
-        setCounselors(data)
+        setCounselors(Array.isArray(data?.counselors) ? data.counselors : [])
       }
     } catch (error) {
       console.error("Failed to fetch counselors:", error)
+      setCounselors([])
     }
   }
 

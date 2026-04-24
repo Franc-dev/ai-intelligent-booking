@@ -2,7 +2,6 @@ import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Navigation } from "@/components/navigation"
-import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { UpcomingBookings } from "@/components/dashboard/upcoming-bookings"
 import { BookingHistory } from "@/components/dashboard/booking-history"
 import { QuickActions } from "@/components/dashboard/quick-actions"
@@ -78,10 +77,15 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation userRole={user.role} userName={user.name} />
-      
-      <DashboardHeader user={user} />
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <section className="border rounded-lg p-5 bg-card">
+          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Welcome back, {user.name || user.email}. Manage your upcoming sessions and book your next appointment.
+          </p>
+        </section>
+
         {/* Stats Overview */}
         <UserStats
           totalBookings={totalBookings}

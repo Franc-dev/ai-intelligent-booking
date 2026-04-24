@@ -27,9 +27,21 @@ export async function POST(req: NextRequest) {
     const scheduledAt = new Date(`${date}T${time}:00`)
     const endTime = new Date(scheduledAt.getTime() + duration * 60 * 1000)
 
+    const activeSetting = await prisma.bookingAssignmentSetting.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+      include: { selectedCounselors: true },
+    })
+    if (
+      activeSetting?.mode === "SELECTED_COUNSELORS" &&
+      !activeSetting.selectedCounselors.some((row) => row.counselorId === counselorId)
+    ) {
+      return NextResponse.json({ success: false, error: "Counselor is not available for current assignment mode" }, { status: 403 })
+    }
+
     // Double-check availability
-    const counselor = await prisma.counselor.findUnique({
-      where: { id: counselorId },
+    const counselor = await prisma.counselor.findFirst({
+      where: { id: counselorId, isActive: true },
       include: { 
         availability: {
           where: { isActive: true }

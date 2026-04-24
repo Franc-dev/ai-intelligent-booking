@@ -18,11 +18,26 @@ enum UserRole {
   ADMIN
 }
 
+enum CounselorApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AssignmentMode {
+  ALL_COUNSELORS
+  SELECTED_COUNSELORS
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
   role      UserRole @default(USER)
+  counselorApprovalStatus CounselorApprovalStatus @default(PENDING)
+  approvedAt DateTime?
+  approvedByUserId String?
+  rejectionReason String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,6 +52,10 @@ model User {
 
   // Login tokens
   loginTokens LoginToken[]
+
+  approvedBy User? @relation("CounselorApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  approvedCounselors User[] @relation("CounselorApprover")
+  createdBookingSettings BookingAssignmentSetting[] @relation("BookingAssignmentCreatedBy")
 
   @@map("users")
 }
@@ -86,11 +105,40 @@ model Counselor {
 
   // Bookings with this counselor
   bookings Booking[]
+  assignmentSettings BookingAssignmentCounselor[]
+  sessionRecords SessionRecord[]
 
   // Users who prefer this counselor
   preferredByUsers UserPreferences[]
 
   @@map("counselors")
+}
+
+model BookingAssignmentSetting {
+  id             String         @id @default(cuid())
+  mode           AssignmentMode @default(ALL_COUNSELORS)
+  isActive       Boolean        @default(true)
+  createdById    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  createdBy      User?                          @relation("BookingAssignmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  selectedCounselors BookingAssignmentCounselor[]
+
+  @@map("booking_assignment_settings")
+}
+
+model BookingAssignmentCounselor {
+  id          String @id @default(cuid())
+  settingId   String
+  counselorId String
+  createdAt   DateTime @default(now())
+
+  setting     BookingAssignmentSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
+  counselor   Counselor @relation(fields: [counselorId], references: [id], onDelete: Cascade)
+
+  @@unique([settingId, counselorId])
+  @@map("booking_assignment_counselors")
 }
 
 model CounselorAvailability {
@@ -125,8 +173,25 @@ model Booking {
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   counselor Counselor @relation(fields: [counselorId], references: [id], onDelete: Cascade)
+  sessionRecords SessionRecord[]
 
   @@map("bookings")
+}
+
+model SessionRecord {
+  id             String   @id @default(cuid())
+  bookingId      String   @unique
+  counselorId    String
+  summary        String?
+  privateNotes   String?
+  qualityRating  Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  counselor      Counselor @relation(fields: [counselorId], references: [id], onDelete: Cascade)
+
+  @@map("session_records")
 }
 
 model AIConversation {

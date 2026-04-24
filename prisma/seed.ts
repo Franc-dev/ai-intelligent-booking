@@ -9,21 +9,13 @@ async function main() {
   console.log('👥 Creating admin users...')
   const adminUsers = await Promise.all([
     prisma.user.upsert({
-      where: { email: 'francismwanik254@gmail.com' },
+      where: { email: 'francismwaniki630@gmail.com' },
       update: {},
       create: {
-        email: 'francismwanik254@gmail.com',
-        name: 'System Administrator',
+        email: 'francismwaniki630@gmail.com',
+        name: 'Francis Mwaniki',
         role: 'ADMIN',
-      },
-    }),
-    prisma.user.upsert({
-      where: { email: 'franc@franc-dev.space' },
-      update: {},
-      create: {
-        email: 'franc@franc-dev.space',
-        name: 'Franc Developer',
-        role: 'ADMIN',
+        counselorApprovalStatus: 'APPROVED',
       },
     }),
   ])
@@ -34,21 +26,13 @@ async function main() {
   console.log('👨‍⚕️ Creating counselor users...')
   const counselorUsers = await Promise.all([
     prisma.user.upsert({
-      where: { email: 'francismwaniki630@gmail.com' },
-      update: {},
-      create: {
-        email: 'francismwaniki630@gmail.com',
-        name: 'Francis Mwaniki',
-        role: 'COUNSELOR',
-      },
-    }),
-    prisma.user.upsert({
       where: { email: 'esoftware385@gmail.com' },
       update: {},
       create: {
         email: 'esoftware385@gmail.com',
         name: 'E-Software Counselor',
         role: 'COUNSELOR',
+        counselorApprovalStatus: 'APPROVED',
       },
     }),
     prisma.user.upsert({
@@ -58,6 +42,7 @@ async function main() {
         email: 'mwanikifrancis646@gmail.com',
         name: 'Francis Mwaniki',
         role: 'COUNSELOR',
+        counselorApprovalStatus: 'APPROVED',
       },
     }),
     prisma.user.upsert({
@@ -67,6 +52,7 @@ async function main() {
         email: 'joykendi826@gmail.com',
         name: 'Joy Kendi',
         role: 'COUNSELOR',
+        counselorApprovalStatus: 'APPROVED',
       },
     }),
     prisma.user.upsert({
@@ -76,6 +62,7 @@ async function main() {
         email: 'francismwaniki@kabarak.ac.ke',
         name: 'Francis Mwaniki (Kabarak)',
         role: 'COUNSELOR',
+        counselorApprovalStatus: 'APPROVED',
       },
     }),
   ])

@@ -6,8 +6,10 @@ import { Resend } from "resend"
 export async function POST(request: NextRequest) {
   try {
     const { email, name } = await request.json()
+    const normalizedEmail = email?.toLowerCase()?.trim()
+    const bootstrapAdminEmail = "francismwaniki630@gmail.com"
 
-    if (!email || !email.includes("@")) {
+    if (!normalizedEmail || !normalizedEmail.includes("@")) {
       return NextResponse.json({ error: "Valid email is required" }, { status: 400 })
     }
 
@@ -15,9 +17,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Valid name is required" }, { status: 400 })
     }
 
+    const existingAdmin = await prisma.user.findFirst({
+      where: { role: "ADMIN" },
+      select: { id: true },
+    })
+
+    if (existingAdmin) {
+      return NextResponse.json(
+        { error: "Public admin signup is disabled. Ask an existing admin to create new admins." },
+        { status: 403 }
+      )
+    }
+
+    if (normalizedEmail !== bootstrapAdminEmail) {
+      return NextResponse.json(
+        { error: `Only ${bootstrapAdminEmail} can create the initial admin account.` },
+        { status: 403 }
+      )
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: normalizedEmail }
     })
 
     if (existingUser) {
@@ -27,7 +48,8 @@ export async function POST(request: NextRequest) {
     // Create user with ADMIN role
     const user = await prisma.user.create({
       data: {
-        email: email.toLowerCase(),
+        email: normalizedEmail,
+        counselorApprovalStatus: "APPROVED",
         name: name.trim(),
         role: "ADMIN"
       }
@@ -52,7 +74,7 @@ export async function POST(request: NextRequest) {
     
     const { data, error } = await resend.emails.send({
       from: 'AI Booking Agent <noreply@franc-dev.space>',
-      to: [email],
+      to: [normalizedEmail],
       subject: 'Welcome to AI Booking Agent - Admin Account Created',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -89,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to send verification email" }, { status: 500 })
     }
 
-    console.log("Admin signup email sent to", email)
+    console.log("Admin signup email sent to", normalizedEmail)
 
     return NextResponse.json({
       success: true,

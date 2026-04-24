@@ -14,13 +14,27 @@ export default async function CounselorSessionsPage() {
     redirect("/dashboard")
   }
 
+  if (user.counselorApprovalStatus !== "APPROVED") {
+    redirect("/counselor/pending")
+  }
+
+  const counselor = await prisma.counselor.findUnique({
+    where: { email: user.email },
+    select: { id: true },
+  })
+
+  if (!counselor) {
+    redirect("/counselor/pending")
+  }
+
   // Get counselor's sessions
   const sessions = await prisma.booking.findMany({
     where: {
-      counselorId: user.id,
+      counselorId: counselor.id,
       status: { in: ["CONFIRMED", "COMPLETED", "CANCELLED"] }
     },
     include: {
+      sessionRecords: true,
       user: {
         select: {
           id: true,
@@ -168,13 +182,19 @@ export default async function CounselorSessionsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Video className="h-4 w-4 mr-2" />
-                      Join Session
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Notes
+                    {session.meetingLink && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={session.meetingLink} target="_blank" rel="noreferrer">
+                          <Video className="h-4 w-4 mr-2" />
+                          Join Session
+                        </a>
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/counselor/sessions?recordFor=${session.id}`}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        {session.sessionRecords.length > 0 ? "Edit Record" : "Add Record"}
+                      </a>
                     </Button>
                   </div>
                 </div>
@@ -232,16 +252,12 @@ export default async function CounselorSessionsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <FileText className="h-4 w-4 mr-2" />
-                      View Notes
-                    </Button>
-                    {session.status === "COMPLETED" && (
-                      <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/counselor/sessions?recordFor=${session.id}`}>
                         <FileText className="h-4 w-4 mr-2" />
-                        Add Notes
-                      </Button>
-                    )}
+                        {session.sessionRecords.length > 0 ? "View Record" : "Add Record"}
+                      </a>
+                    </Button>
                   </div>
                 </div>
               ))}

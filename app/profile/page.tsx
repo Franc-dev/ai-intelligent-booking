@@ -1,5 +1,4 @@
 import { getCurrentUser } from "@/lib/auth-utils"
-import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { ProfileForm } from "@/components/profile/profile-form"
 import { PreferencesForm } from "@/components/profile/preferences-form"
@@ -13,38 +12,6 @@ export default async function ProfilePage() {
   if (!user) {
     redirect("/login")
   }
-
-  // Role-based access control
-  if (user.role === "ADMIN") {
-    redirect("/admin/users")
-  } else if (user.role === "COUNSELOR") {
-    redirect("/counselor")
-  }
-
-  // Fetch user preferences and counselors
-  const [userPreferences, counselors] = await Promise.all([
-    prisma.userPreferences.findUnique({
-      where: { userId: user.id },
-      include: {
-        preferredCounselor: {
-          select: {
-            id: true,
-            name: true,
-            specialties: true,
-          },
-        },
-      },
-    }),
-    prisma.counselor.findMany({
-      where: { isActive: true },
-      select: {
-        id: true,
-        name: true,
-        specialties: true,
-        bio: true,
-      },
-    }),
-  ])
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,7 +47,7 @@ export default async function ProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <PreferencesForm userId={user.id} preferences={userPreferences} counselors={counselors} />
+              <PreferencesForm />
             </CardContent>
           </Card>
         </div>

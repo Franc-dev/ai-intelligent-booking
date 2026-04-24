@@ -13,6 +13,19 @@ export interface JWTPayload {
   exp: number
 }
 
+export async function getCounselorProfileByUserId(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, role: true },
+  })
+
+  if (!user || user.role !== "COUNSELOR") return null
+
+  return prisma.counselor.findUnique({
+    where: { email: user.email },
+  })
+}
+
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || "fallback-secret")
@@ -97,6 +110,24 @@ export function requireUserRole(handler: Function) {
 
 export function requireCounselorRole(handler: Function) {
   return requireRole(["COUNSELOR"])(handler)
+}
+
+export function requireApprovedCounselorRole(handler: Function) {
+  return requireRole(["COUNSELOR"])(async (req: NextRequest, user: JWTPayload) => {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { counselorApprovalStatus: true },
+    })
+
+    if (!dbUser || dbUser.counselorApprovalStatus !== "APPROVED") {
+      return new Response(JSON.stringify({ error: "Counselor approval pending" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      })
+    }
+
+    return handler(req, user)
+  })
 }
 
 export function requireAdminRole(handler: Function) {

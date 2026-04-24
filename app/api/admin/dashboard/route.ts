@@ -7,7 +7,15 @@ async function getAdminDashboardData(req: NextRequest, user: any) {
     // Get system-wide stats (only admins can access)
     const totalUsers = await prisma.user.count()
     const totalCounselors = await prisma.user.count({ where: { role: "COUNSELOR" } })
+    const pendingCounselors = await prisma.user.count({
+      where: { role: "COUNSELOR", counselorApprovalStatus: "PENDING" },
+    })
     const totalBookings = await prisma.booking.count()
+    const completedBookings = await prisma.booking.count({ where: { status: "COMPLETED" } })
+    const cancelledBookings = await prisma.booking.count({ where: { status: "CANCELLED" } })
+    const missingSessionRecords = await prisma.booking.count({
+      where: { status: "COMPLETED", sessionRecords: { none: {} } },
+    })
     
     // Get recent activity
     const recentBookings = await prisma.booking.findMany({
@@ -29,7 +37,11 @@ async function getAdminDashboardData(req: NextRequest, user: any) {
     return NextResponse.json({
       totalUsers,
       totalCounselors,
+      pendingCounselors,
       totalBookings,
+      completedBookings,
+      cancelledBookings,
+      missingSessionRecords,
       thisMonthBookings,
       recentBookings
     })

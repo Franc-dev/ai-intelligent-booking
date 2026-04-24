@@ -13,6 +13,8 @@ export async function GET() {
       id: user.id,
       email: user.email,
       name: user.name,
+      role: user.role,
+      counselorApprovalStatus: user.counselorApprovalStatus,
     })
   } catch (error) {
     console.error("Error getting current user:", error)
